@@ -28,6 +28,7 @@ def get_values(payoffs, p1_a1, p2_a1, gamma):
         torch.mul(1-p1_sX_a1, p2_sX_a1),
         torch.mul(1-p1_sX_a1, 1-p2_sX_a1)
     ])
+    P.t()
     # size: [4,4] probability of transition - first ind is s', second is s, 
 
     ### Calculate V1 and V2
@@ -35,33 +36,19 @@ def get_values(payoffs, p1_a1, p2_a1, gamma):
     r2 = torch.tensor([p2 for a1 in payoffs for p1, p2 in a1], dtype=torch.float64)
     # payoffs for CC, CD, DC, DD
 
-    ### Approximate gradient by taking first 500 terms of infinite sum
-    v1, v2 = torch.tensor(0., requires_grad=True, dtype=torch.float64), torch.tensor(0., requires_grad=True, dtype=torch.float64)
-    st = torch.mm(P, p0)
-    v1 = v1 + torch.dot(st.reshape(-1), r1).item()
-    v2 = v2 + torch.dot(st.reshape(-1), r2).item()
-    d = gamma
-    for _ in range(500):
-        st = torch.mm(P, st)
-        v1 = v1 + d * torch.dot(st.reshape(-1), r1)
-        v2 = v2 + d * torch.dot(st.reshape(-1), r2)
-        d *= gamma
+    inf_sum = torch.inverse(torch.eye(4) - (gamma * P))
 
-    # inf_sum = torch.inverse(torch.eye(4) - (gamma * P))
+    v1 = torch.dot(
+        torch.mm(
+            inf_sum, p0).reshape(-1),
+        r1
+    )
 
-    # v1 = torch.matmul(
-    #     torch.matmul(
-    #         p0.reshape((1, -1)), 
-    #         inf_sum),
-    #     r1
-    # )
-
-    # v2 = torch.matmul(
-    #     torch.matmul(
-    #         p0.reshape((1, -1)), 
-    #         inf_sum),
-    #     r2
-    # )
+    v2 = torch.dot(
+        torch.mm(
+            inf_sum, p0).reshape(-1),
+        r2
+    )
 
     return v1, v2
 

@@ -27,8 +27,8 @@ def lola_exp(game, gamma, lr, train_ep):
     r1, r2 = test(env, p1_a1, p2_a1)
     return p1_a1, p2_a1, r1, r2
 
-def full_lola(iterations, gamma, lr, train_ep, seed):
-    seed(seed)
+def full_lola(iterations, gamma, lr, train_ep, sd):
+    seed(sd)
     results = []
     policies = []
     for game in ['PD', 'BoS']:
@@ -62,11 +62,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment', '-e', default='lola', choices=['lola'])
     parser.add_argument('--iterations', '-i', default=40, type=int)
-    parser.add_argument('--train_ep', '-te', default=5, type=int)
+    parser.add_argument('--train_ep', '-te', default=100, type=int)
     parser.add_argument('--gamma', '-g', default=0.96, type=float)
-    parser.add_argument('--learning_rate', '-lr', default=10, type=float)
+    parser.add_argument('--learning_rate', '-lr', default=1, type=float)
     parser.add_argument('--seed', '-s', default=1234)
     args = parser.parse_args()
 
     if args.experiment == 'lola':
-        full_lola(args.iterations, args.gamma, args.learing_rate, args.train_ep, args.seed)
+        full_lola(args.iterations, args.gamma, args.learning_rate, args.train_ep, args.seed)
