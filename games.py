@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 class IteratedGame():
@@ -79,8 +81,57 @@ class BoS(IteratedGame):
     def __init__(self):
         super().__init__(bos_payoffs, 100, action_names=bos_actions)
 
+mp_payoffs = [
+    [(2,0), (0,2)],
+    [(0,2), (2,0)]
+]
+
+class MP(IteratedGame):
+    def __init__(self):
+        super().__init__(mp_payoffs, 100)
+
+coord_payoffs = [
+    [(2,2), (0,0)],
+    [(0,0), (1,1)]
+]
+
+class Coord(IteratedGame):
+    def __init__(self):
+        super().__init__(coord_payoffs, 100)
+
 def get_game(game):
     if game == 'PD':
         return PD
     elif game == 'BoS':
         return BoS
+
+class IncompleteInfoGame():
+    """
+    A one step game (although can be reset to resample types)
+
+    For types T, games should be a |T|x|T| matrix of 
+    games payoffs. First ind is player 1's type, second is
+    player 2's
+    """
+    def __init__(self, games, dist='unif'):
+        self.pfs = games
+        self.n_types = len(games)
+        self.dist = dist
+        self.types = None
+
+    def _sample_types(self):
+        """
+        Uniform, or supply joint prob
+        """
+        if self.dist == 'unif':
+            return random.choice(range(self.n_types)), random.choice(range(self.n_types))
+        elif isinstance(self.dist, list):
+            #TODO
+            pass
+
+    def reset(self):
+        self.types = self._sample_types()
+        return self.types[0], self.types[1]
+
+    def step(self, a1, a2):
+        return self.pfs[self.types[0]][self.types[1]][a1][a2]
