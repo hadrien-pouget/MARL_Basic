@@ -135,3 +135,9 @@ class IncompleteInfoGame():
 
     def step(self, a1, a2):
         return self.pfs[self.types[0]][self.types[1]][a1][a2]
+
+four_games = [[mp_payoffs, pd_payoffs], [coord_payoffs, bos_payoffs]]
+
+class IncompleteFour(IncompleteInfoGame):
+    def __init__(self):
+        super().__init__(four_games)
