@@ -89,5 +89,5 @@ def lola_train(env, p1_a1, p2_a1, episodes, gamma, lr, verbose=0):
 
     if verbose > 0:
         v1, v2 = get_values(env.pfs, p1_a1, p2_a1, gamma)
-        print("Final Values are: p1 {:0.2f} | p2 {:0.2f}".format(v1.item(), v2.item()))
+        print("Final Values are: v1 {:0.2f} | v2 {:0.2f}".format(v1.item(), v2.item()))
     return p1_a1.detach().clone(), p2_a1.detach().clone()
