@@ -1,4 +1,5 @@
 import random
+import itertools
 
 import numpy as np
 
@@ -116,18 +117,32 @@ class IncompleteInfoGame():
     def __init__(self, games, dist='unif'):
         self.pfs = games
         self.n_types = len(games)
+        self.n_games = self.n_types ** 2
         self.dist = dist
+        if self.dist == 'unif':
+            self.dist = [[1/self.n_games for _ in range(self.n_types)] for _ in range(self.n_types)]
         self.types = None
 
     def _sample_types(self):
         """
         Uniform, or supply joint prob
         """
-        if self.dist == 'unif':
-            return random.choice(range(self.n_types)), random.choice(range(self.n_types))
-        elif isinstance(self.dist, list):
-            #TODO
-            pass
+        tot = 0
+        t1 = -1
+        r = random.random()
+        done = False
+        while not done:
+            t1 += 1
+            games = self.dist[t1]
+            t2 = -1
+            for g_prob in games:
+                t2 += 1
+                tot += g_prob
+                if tot >= r:
+                    done = True
+                    break
+
+        return t1, t2
 
     def reset(self):
         self.types = self._sample_types()
@@ -136,8 +151,32 @@ class IncompleteInfoGame():
     def step(self, a1, a2):
         return self.pfs[self.types[0]][self.types[1]][a1][a2]
 
+    def normal_form(self):
+        actions = [0, 1]
+        rep_actions = [actions] * (2 * self.n_types)
+        # a12 is action of player 1 for type 2
+        rs = []
+        for strats in itertools.product(*rep_actions):
+            r1, r2 = 0, 0
+            for t1, t2 in itertools.product(range(self.n_types), range(self.n_types)):
+                r1 += self.dist[t1][t2] * self.pfs[t1][t2][strats[t1]][strats[self.n_types + t2]][0]
+                r2 += self.dist[t1][t2] * self.pfs[t1][t2][strats[t1]][strats[self.n_types + t2]][1]
+            rs.append((r1, r2))
+        
+        rowlen = len(actions)**self.n_types
+        payoffs = [[rs[(p1 * rowlen)+p2] for p2 in range(rowlen)] for p1 in range(rowlen)]
+        return payoffs
+
+    def print_normalform(self):
+        print("\n".join(map(str, self.normal_form())))
+
 four_games = [[mp_payoffs, pd_payoffs], [coord_payoffs, bos_payoffs]]
 
 class IncompleteFour(IncompleteInfoGame):
     def __init__(self):
+        # super().__init__(four_games, dist=[[0., 0.], [1., 0.]])
+        # super().__init__(four_games, dist=[[1., 0.], [0., 0.]])
+        # super().__init__(four_games, dist=[[0., 0.], [0., 1.]])
+        # super().__init__(four_games, dist=[[0., 1.], [0., 0.]])
+        # super().__init__(four_games, dist=[[0.1, 0.4], [0.2, 0.3]])
         super().__init__(four_games)
