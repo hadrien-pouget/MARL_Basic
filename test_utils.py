@@ -40,3 +40,15 @@ def test_cross(env, p1s, p2s, test_e=1, cross_tests=40):
         all_r1s.append(r1)
         all_r2s.append(r2)
     return all_r1s, all_r2s
+
+def incomplete_simple_test(env, p1, p2, test_e=1):
+    all_r1s, all_r2s = [], []
+    for _ in range(test_e):
+        t1, t2 = env.reset()
+        a1 = 0 if random.random() < p1[t1] else 1
+        a2 = 0 if random.random() < p2[t2] else 1  
+        r1, r2 = env.step(a1, a2)     
+        all_r1s.append(r1) 
+        all_r2s.append(r2)
+
+    return np.mean(all_r1s), np.mean(all_r2s)
