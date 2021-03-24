@@ -5,9 +5,10 @@ import torch
 import numpy as np
 
 from lola import lola_train
+from incomplete_lola import incomplete_simple_lola_train
 from utils import plot_results, save_results, load_results, plot_again, save_policies, seed
-from test_utils import test, test_cross
-from games import get_game
+from test_utils import test, test_cross, incomplete_simple_test
+from games import get_game, IncompleteFour
 
 def lola_exp(game, gamma, lr, train_ep):
     """
@@ -58,15 +59,68 @@ def full_lola(iterations, gamma, lr, train_ep, sd):
         plot_results(r1_cross, r2_cross, game=game, save=game, color='blue')
         save_results('XPfs_' + game, r1_cross, r2_cross)
 
+def lola_incomplete_simple_exp(dist_n, lr, train_ep):
+    """
+    Given a joint dist over the games, initialise random agents, train with lola,
+    and return average payoff for each step
+    """
+    env = IncompleteFour(dist_n)
+
+    p1 = torch.randn(2, requires_grad=True)
+    p2 = torch.randn(2, requires_grad=True)
+
+    p1, p2 = incomplete_simple_lola_train(env, p1, p2, train_ep, lr)
+
+    # Convert to probabilities
+    p1 = torch.sigmoid(p1)
+    p2 = torch.sigmoid(p2)
+
+    r1, r2 = incomplete_simple_test(env, p1, p2, test_e=50)
+    return p1, p2, r1, r2
+
+def full_incomplete_simple_lola(dist_n, iterations, lr, train_ep, sd):
+    seed(sd)
+    results = []
+    policies = []
+    print("---- Starting ----")
+    for n in range(iterations):
+        print("Iteration", n, end='\r')
+        p1_a1, p2_a1, r1, r2 = lola_incomplete_simple_exp(dist_n, lr, train_ep)
+        results.append((r1, r2))
+        policies.append((p1_a1, p2_a1))
+    print()
+
+    ### From standard play
+    x = [r1 for r1, r2 in results]
+    y = [r2 for r1, r2 in results]
+    plot_results(x, y, save='incomplete_simple_lola', color='orange')
+    save_results('Pfs_incomp_simp', x, y)
+
+    ### Cross play
+    p1s = [a.tolist() for a, b in policies]
+    p2s = [b.tolist() for a, b in policies]
+    save_policies('Pols_incomp_simp', p1s, p2s)
+
+    # env = get_game(game)()
+    # r1_cross, r2_cross = test_cross(env, p1s, p2s)
+    # plot_results(r1_cross, r2_cross, game=game, save=game, color='blue')
+    # save_results('XPfs_' + game, r1_cross, r2_cross)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--experiment', '-e', default='lola', choices=['lola'])
+    parser.add_argument('--experiment', '-e', default='lola', choices=[
+        'lola', 
+        'incomplete_simple_lola',
+    ])
     parser.add_argument('--iterations', '-i', default=40, type=int)
     parser.add_argument('--train_ep', '-te', default=100, type=int)
     parser.add_argument('--gamma', '-g', default=0.96, type=float)
     parser.add_argument('--learning_rate', '-lr', default=1, type=float)
     parser.add_argument('--seed', '-s', default=1234)
+    parser.add_argument('--dist_n', '-d', default=0)
     args = parser.parse_args()
 
     if args.experiment == 'lola':
         full_lola(args.iterations, args.gamma, args.learning_rate, args.train_ep, args.seed)
+    elif args.experiment == 'incomplete_simple_lola':
+        full_incomplete_simple_lola(args.dist_n, args.iterations, args.learning_rate, args.train_ep, args.seed)
