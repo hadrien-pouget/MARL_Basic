@@ -6,12 +6,10 @@ import numpy as np
 from games import PD, BoS
 from utils import zero_grad
 
-def simple_get_values(payoffs, dist, p1, p2, gamma):
+def incomplete_simple_get_values(payoffs, dist, p1, p2):
     # Turn into probabilities
     p1 = torch.sigmoid(p1)
     p2 = torch.sigmoid(p2)
-
-    pfs = torch.tensor(payoffs)
 
     p11, p12 = p1.split([1,1])
     # Player 1, types 1 and 2
@@ -49,7 +47,7 @@ def simple_get_values(payoffs, dist, p1, p2, gamma):
 
     return v1, v2
 
-def simple_lola_train(env, p1, p2, episodes, gamma, lr, verbose=0):
+def incomplete_simple_lola_train(env, p1, p2, episodes, lr, verbose=0):
     """ 
     For a one-shot incomplete information game. p1 and p2 are a list 
     of numbers representing the pre-sigmoid probability for action 0.
@@ -58,7 +56,7 @@ def simple_lola_train(env, p1, p2, episodes, gamma, lr, verbose=0):
         print()
         print("---- Beginning training ----")
     for e in range(episodes):
-        v1, v2 = simple_get_values(env.pfs, env.dist, p1, p2, gamma)
+        v1, v2 = incomplete_simple_get_values(env.pfs, env.dist, p1, p2)
         if verbose > 1:
             with torch.no_grad():
                 print("E {:3} | v1: {:0.2f} | v2: {:0.2f} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(e+1, v1.item(), v2.item(), *torch.sigmoid(p1).tolist(), *torch.sigmoid(p2).tolist()))
@@ -88,14 +86,6 @@ def simple_lola_train(env, p1, p2, episodes, gamma, lr, verbose=0):
 
     if verbose > 0:
         with torch.no_grad():
-            v1, v2 = simple_get_values(env.pfs, env.dist, p1, p2, gamma)
+            v1, v2 = incomplete_simple_get_values(env.pfs, env.dist, p1, p2)
             print("E   F | v1: {:0.2f} | v2: {:0.2f} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(v1.item(), v2.item(), *torch.sigmoid(p1).tolist(), *torch.sigmoid(p2).tolist()))
     return p1.detach().clone(), p2.detach().clone()
-
-from utils import seed
-from games import IncompleteFour
-# seed(1234)
-env = IncompleteFour()
-p1 = torch.randn(2, requires_grad=True)
-p2 = torch.randn(2, requires_grad=True)
-simple_lola_train(env, p1, p2, 500, 0.96, 1, verbose=1)
