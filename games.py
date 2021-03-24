@@ -173,10 +173,13 @@ class IncompleteInfoGame():
 four_games = [[mp_payoffs, pd_payoffs], [coord_payoffs, bos_payoffs]]
 
 class IncompleteFour(IncompleteInfoGame):
-    def __init__(self):
-        # super().__init__(four_games, dist=[[0., 0.], [1., 0.]])
-        # super().__init__(four_games, dist=[[1., 0.], [0., 0.]])
-        # super().__init__(four_games, dist=[[0., 0.], [0., 1.]])
-        # super().__init__(four_games, dist=[[0., 1.], [0., 0.]])
-        # super().__init__(four_games, dist=[[0.1, 0.4], [0.2, 0.3]])
-        super().__init__(four_games)
+    def __init__(self, dist_n=0):
+        self.preset_dists = [
+            'unif',
+            [[1., 0.], [0., 0.]],
+            [[0., 1.], [0., 0.]],
+            [[0., 0.], [1., 0.]],
+            [[0., 0.], [0., 1.]],
+            [[0.1, 0.4], [0.2, 0.3]]
+        ]
+        super().__init__(four_games, dist=self.preset_dists[dist_n])
