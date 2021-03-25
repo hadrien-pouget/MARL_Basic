@@ -5,6 +5,14 @@ import numpy as np
 import scipy
 from scipy.spatial import ConvexHull
 
+def get_game(game):
+    if game == 'PD':
+        return PD
+    elif game == 'BoS':
+        return BoS
+    elif game == 'Incomp_four':
+        return IncompleteFour
+
 class IteratedGame():
     """ Implements an iterated game as an environment based on 
     a payoff matrix for two players
@@ -101,12 +109,6 @@ coord_payoffs = [
 class Coord(IteratedGame):
     def __init__(self):
         super().__init__(coord_payoffs, 100)
-
-def get_game(game):
-    if game == 'PD':
-        return PD
-    elif game == 'BoS':
-        return BoS
 
 class IncompleteInfoGame():
     """
