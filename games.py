@@ -2,6 +2,8 @@ import random
 import itertools
 
 import numpy as np
+import scipy
+from scipy.spatial import ConvexHull
 
 class IteratedGame():
     """ Implements an iterated game as an environment based on 
@@ -146,7 +148,7 @@ class IncompleteInfoGame():
 
     def reset(self):
         self.types = self._sample_types()
-        return self.types[0], self.types[1]
+        return self.types
 
     def step(self, a1, a2):
         return self.pfs[self.types[0]][self.types[1]][a1][a2]
@@ -169,6 +171,18 @@ class IncompleteInfoGame():
 
     def print_normalform(self):
         print("\n".join(map(str, self.normal_form())))
+    
+    def get_pure_outcomes_as_points(self):
+        nform = self.normal_form()
+        points = [rs for strat1 in nform for rs in strat1]
+        return points
+
+    def outcomes_polygon(self):
+        points = self.get_pure_outcomes_as_points()
+        hull = ConvexHull(points)
+        polygon_xs = [points[p][0] for p in hull.vertices]
+        polygon_ys = [points[p][1] for p in hull.vertices]
+        return polygon_xs, polygon_ys
 
 four_games = [[mp_payoffs, pd_payoffs], [coord_payoffs, bos_payoffs]]
 
