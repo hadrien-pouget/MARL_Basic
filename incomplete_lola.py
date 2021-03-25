@@ -47,6 +47,35 @@ def incomplete_simple_get_values(payoffs, dist, p1, p2):
 
     return v1, v2
 
+def incomplete_simple_naive_train(env, p1, p2, episodes, lr, verbose=0):
+    if verbose > 1:
+        print()
+        print("---- Beginning training ----")
+    for e in range(episodes):
+        v1, v2 = incomplete_simple_get_values(env.pfs, env.dist, p1, p2)
+        if verbose > 1:
+            with torch.no_grad():
+                print("E {:3} | v1: {:0.2f} | v2: {:0.2f} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(e+1, v1.item(), v2.item(), *torch.sigmoid(p1).tolist(), *torch.sigmoid(p2).tolist()))
+                # print("E {:2} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(e+1, *p1.tolist(), *p2.tolist()))
+
+        zero_grad(p1)
+        zero_grad(p2)
+
+        ### Gradients of each value function w/ respect to each set of parameters
+        [p1_grad] = torch.autograd.grad(v1, [p1], create_graph=True, only_inputs=True)
+        [p2_grad] = torch.autograd.grad(v2, [p2], create_graph=True, only_inputs=True)
+
+        ### Take gradient steps
+        with torch.no_grad():
+            p1 += p1_grad * lr
+            p2 += p2_grad * lr
+
+    if verbose > 0:
+        with torch.no_grad():
+            v1, v2 = incomplete_simple_get_values(env.pfs, env.dist, p1, p2)
+            print("E   F | v1: {:0.2f} | v2: {:0.2f} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(v1.item(), v2.item(), *torch.sigmoid(p1).tolist(), *torch.sigmoid(p2).tolist()))
+    return p1.detach().clone(), p2.detach().clone() 
+
 def incomplete_simple_lola_train(env, p1, p2, episodes, lr, verbose=0):
     """ 
     For a one-shot incomplete information game. p1 and p2 are a list 
