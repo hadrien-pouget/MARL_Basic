@@ -43,8 +43,10 @@ def test_cross(env, p1s, p2s, test_e=1, cross_tests=40):
 
 def incomplete_simple_test(env, p1, p2, test_e=1):
     all_r1s, all_r2s = [], []
+    games = [0,0,0,0] # For debugging purposes
     for _ in range(test_e):
         t1, t2 = env.reset()
+        games[(2*t1)+t2] += 1
         a1 = 0 if random.random() < p1[t1] else 1
         a2 = 0 if random.random() < p2[t2] else 1  
         r1, r2 = env.step(a1, a2)     
