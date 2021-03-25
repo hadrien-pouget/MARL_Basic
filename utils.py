@@ -40,6 +40,10 @@ def load_policies(name):
     dic = QuickSaver().load_json(name)
     return dic['p1 policy'], dic['p2 policy']
 
+def save_results_and_policies(name, xs, ys, p1s, p2s):
+    json = {n: (x, y, p1, p2) for n, (x, y, p1, p2) in enumerate(zip(xs, ys, p1s, p2s))}
+    QuickSaver().save_json(json, name=name)
+
 def plot_again(n, m, game):
     xs, ys = load_results('Pfs_' + game + '_' + str(n) + '.json')
     plot_results(xs, ys, color='orange')
@@ -56,9 +60,14 @@ def plot_results(xs, ys, game=None, save=None, color=None):
     else:
         sns.scatterplot(x=xs, y=ys)
 
+    # from games import IncompleteFour
+    # points = IncompleteFour().get_pure_outcomes_as_points()
+    # sns.scatterplot(x=[x for x, y in points], y=[y for x, y in points], ec='red')
+
     polygons = {
         'PD': ([-3, -1, 0, -2], [0, -1, -3, -2]),
         'BoS': ([0, 2, 4], [0, 2, 1]),
+        'Incomp_four': ([1.5, 1.75, 0.0, -0.75, 0.0], [-0.5, 0.5, 1.25, 0.5, -0.5]), # produced using outcomes_polygon function
     }
     if game in polygons:
         plt.fill(polygons[game][0], polygons[game][1], alpha=0.2, color='purple')
