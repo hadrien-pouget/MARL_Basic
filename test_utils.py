@@ -46,7 +46,27 @@ def test_cross_iterated(env, p1s, p2s, test_e=1, cross_tests=40):
         all_r2s.append(r2)
     return all_r1s, all_r2s
 
-def incomplete_oneshot_test(env, p1, p2, test_e=1):
+def test_cross_incomplete_iterated(env, p1s, p2s, test_e=1, cross_tests=40):
+    """
+    Given two lists of trained policies, randomly samples a policy 
+    for each player and get average payoff per step
+    """
+    all_r1s = []
+    all_r2s = []
+    for _ in range(cross_tests):
+        p1 = random.choice(p1s)
+        p2 = random.choice(p2s)
+
+        t1, t2 = env.reset()
+        p1_t = p1[t1]
+        p2_t = p2[t2]
+        import pdb; pdb.set_trace()
+        r1, r2 = test_iterated(env, p1_t, p2_t, test_e=test_e)
+        all_r1s.append(r1)
+        all_r2s.append(r2)
+    return all_r1s, all_r2s
+
+def test_incomplete_oneshot(env, p1, p2, test_e=1):
     all_r1s, all_r2s = [], []
     games = [0,0,0,0] # For debugging purposes
     for _ in range(test_e):

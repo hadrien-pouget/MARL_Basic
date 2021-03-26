@@ -5,11 +5,11 @@ import torch
 import numpy as np
 
 from utils import plot_results, save_results, seed, save_results_and_policies, save_plot
-from test_utils import test_iterated, test_cross_iterated, incomplete_oneshot_test
+from test_utils import test_iterated, test_cross_iterated, test_incomplete_oneshot, test_cross_incomplete_iterated
 from games import get_game
 from train_loop import train
 from train_steps import naive_step, lola_step
-from value_functions import get_value_incomplete_oneshot, get_value_iterated
+from value_functions import get_value_incomplete_oneshot, get_value_iterated, get_value_incomplete_iterated
 from quicksave import QuickSaver
 
 def train_test_incomplete_oneshot(env, step_func, gamma, lr, train_ep):
@@ -35,8 +35,8 @@ def train_test_iterated(env, step_func, gamma, lr, train_ep):
     Given a game, initialise random agents, train with lola,
     and return average payoff for each step
     """
-    p1 = torch.randn(5, requires_grad=True, dtype=torch.float64)
-    p2 = torch.randn(5, requires_grad=True, dtype=torch.float64)
+    p1 = torch.randn(5, requires_grad=True)
+    p2 = torch.randn(5, requires_grad=True)
 
     p1, p2 = train(env, p1, p2, get_value_iterated, step_func, train_ep, gamma, lr)
 
@@ -47,6 +47,19 @@ def train_test_iterated(env, step_func, gamma, lr, train_ep):
     r1, r2 = test_iterated(env, p1, p2)
     return p1, p2, r1, r2
 
+def train_test_incomplete_iterated(env, step_func, gamma, lr, train_ep):
+    p1 = torch.randn((2,5), requires_grad=True)
+    p2 = torch.randn((2,5), requires_grad=True)
+
+    p1, p2 = train(env, p1, p2, get_value_incomplete_iterated, step_func, train_ep, gamma, lr)
+
+    # Convert to probabilities
+    p1 = torch.sigmoid(p1)
+    p2 = torch.sigmoid(p2)
+
+    r1, r2 = test_iterated(env, p1, p2)
+    return p1, p2, r1, r2  
+
 test_trains = {
     'complete': {
         'one_shot': None,
@@ -54,13 +67,24 @@ test_trains = {
     },
     'incomplete': {
         'one_shot': train_test_incomplete_oneshot,
-        'iterated': None,
+        'iterated': train_test_incomplete_iterated,
     },
 }
 
 step_funcs = {
     'lola': lola_step,
     'naive': naive_step,
+}
+
+cross_tests = {
+    'complete': {
+        'one_shot': None,
+        'iterated': test_cross_iterated,
+    },
+    'incomplete': {
+        'one_shot': None,
+        'iterated': test_cross_incomplete_iterated,
+    }, 
 }
 
 def experiment(game, game_type, info_type, step_type, iterations, gamma, lr, train_ep, dist_n, config):
@@ -94,8 +118,9 @@ def experiment(game, game_type, info_type, step_type, iterations, gamma, lr, tra
     save_results_and_policies(qs, 'Pols_res', x, y, p1s, p2s)
     
     ### Cross play
-    if game_type == 'iterated':
-        r1_cross, r2_cross = test_cross_iterated(env, p1s, p2s, cross_tests=iterations)
+    cross_test = cross_tests[game_type][info_type]
+    if cross_test is not None:
+        r1_cross, r2_cross = cross_test(env, p1s, p2s, cross_tests=iterations)
         plot_results(r1_cross, r2_cross, game=game, color='blue')
         save_results(qs, 'XPfs', r1_cross, r2_cross)
 
@@ -125,7 +150,7 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', '-g', default=0.96, type=float)
     parser.add_argument('--learning_rate', '-lr', default=1, type=float)
     parser.add_argument('--seed', '-s', default=1234)
-    parser.add_argument('--dist_n', '-d', default=0)
+    parser.add_argument('--dist_n', '-d', default=0, type=int)
     args = parser.parse_args()
 
     seed(args.seed)

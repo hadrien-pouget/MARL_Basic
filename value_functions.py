@@ -1,4 +1,5 @@
 import torch
+import itertools
 
 def get_value_incomplete_oneshot(payoffs, p1, p2, dist, gamma):
     # Turn into probabilities
@@ -41,6 +42,27 @@ def get_value_incomplete_oneshot(payoffs, p1, p2, dist, gamma):
 
     return v1, v2
 
+def get_value_incomplete_iterated(payoffs, p1, p2, dist, gamma):
+    """
+    p1[type][state]
+    """
+    vs_per_game_1 = []
+    vs_per_game_2 = []
+    for t1, t2 in [(0, 0), (0, 1), (1, 0), (1, 1)]:
+        v1, v2 = get_value_iterated(payoffs[t1][t2], p1[t1], p2[t2], None, gamma)
+        vs_per_game_1.append(v1)
+        vs_per_game_2.append(v2)
+
+    vs_per_game_1 = torch.stack(vs_per_game_1)
+    vs_per_game_2 = torch.stack(vs_per_game_2)
+    dist = torch.tensor(dist).reshape(-1)
+
+    v1 = torch.dot(vs_per_game_1, dist)
+    v2 = torch.dot(vs_per_game_2, dist)
+
+    return v1, v2
+
+
 def get_value_iterated(payoffs, p1, p2, dist, gamma):
     # Turn into probabilities
     p1 = torch.sigmoid(p1)
@@ -67,8 +89,8 @@ def get_value_iterated(payoffs, p1, p2, dist, gamma):
     # size: [4,4] probability of transition - first ind is s', second is s, 
 
     ### Calculate V1 and V2
-    r1s = torch.tensor([r1 for a1 in payoffs for r1, r2 in a1], dtype=torch.float64)
-    r2s = torch.tensor([r2 for a1 in payoffs for r1, r2 in a1], dtype=torch.float64)
+    r1s = torch.tensor([r1 for a1 in payoffs for r1, r2 in a1], dtype=torch.float)
+    r2s = torch.tensor([r2 for a1 in payoffs for r1, r2 in a1], dtype=torch.float)
     # payoffs for CC, CD, DC, DD
 
     inf_sum = torch.inverse(torch.eye(4) - (gamma * P))

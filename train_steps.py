@@ -25,6 +25,11 @@ def lola_step(p1, p2, v1, v2, lr):
     [v1_grad_p1, v1_grad_p2] = torch.autograd.grad(v1, [p1, p2], create_graph=True, only_inputs=True)
     [v2_grad_p1, v2_grad_p2] = torch.autograd.grad(v2, [p1, p2], create_graph=True, only_inputs=True)
 
+    v1_grad_p1 = v1_grad_p1.reshape(-1)
+    v1_grad_p2 = v1_grad_p2.reshape(-1)
+    v2_grad_p1 = v2_grad_p1.reshape(-1)
+    v2_grad_p2 = v2_grad_p2.reshape(-1)
+
     ### p1 lola gradient
     multiply = torch.dot(v2_grad_p2, v1_grad_p2)
     v1_approx = v1 + multiply

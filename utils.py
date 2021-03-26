@@ -61,6 +61,7 @@ def plot_results(xs, ys, game=None, color=None):
     polygons = {
         'PD': ([-3, -1, 0, -2], [0, -1, -3, -2]),
         'BoS': ([0, 2, 4], [0, 2, 1]),
+        # TODO: This is currently for the uniform dist version.
         'Incomp_four': ([1.5, 1.75, 0.0, -0.75, 0.0], [-0.5, 0.5, 1.25, 0.5, -0.5]), # produced using outcomes_polygon function
     }
     if game in polygons:
