@@ -1,6 +1,6 @@
 import torch
 
-def get_value_incomplete_oneshot(payoffs, dist, p1, p2):
+def get_value_incomplete_oneshot(payoffs, p1, p2, dist, gamma):
     # Turn into probabilities
     p1 = torch.sigmoid(p1)
     p2 = torch.sigmoid(p2)
@@ -41,7 +41,7 @@ def get_value_incomplete_oneshot(payoffs, dist, p1, p2):
 
     return v1, v2
 
-def get_value_iterated(payoffs, p1, p2, gamma):
+def get_value_iterated(payoffs, p1, p2, dist, gamma):
     # Turn into probabilities
     p1 = torch.sigmoid(p1)
     p2 = torch.sigmoid(p2)

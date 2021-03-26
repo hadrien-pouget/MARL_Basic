@@ -5,13 +5,13 @@ import numpy as np
 import scipy
 from scipy.spatial import ConvexHull
 
-def get_game(game):
+def get_game(game, **kwargs):
     if game == 'PD':
-        return PD
+        return PD()
     elif game == 'BoS':
-        return BoS
+        return BoS()
     elif game == 'Incomp_four':
-        return IncompleteFour
+        return IncompleteFour(kwargs['dist_n'])
 
 class IteratedGame():
     """ Implements an iterated game as an environment based on 
@@ -32,6 +32,7 @@ class IteratedGame():
         self.n_obs = self.action_space[0] * self.action_space[1]
         self.n_obs += 1 # Initial state 
         self.steps_taken = 0
+        self.dist = None # To be consistent with incomplete info
 
         if action_names is not None:
             self.action_names = action_names
@@ -118,13 +119,21 @@ class IncompleteInfoGame():
     games payoffs. First ind is player 1's type, second is
     player 2's
     """
-    def __init__(self, games, dist='unif'):
+    def __init__(self, games, dist_n=0):
         self.pfs = games
         self.n_types = len(games)
         self.n_games = self.n_types ** 2
-        self.dist = dist
-        if self.dist == 'unif':
-            self.dist = [[1/self.n_games for _ in range(self.n_types)] for _ in range(self.n_types)]
+
+        self.preset_dists = [
+            [[1/self.n_games for _ in range(self.n_types)] for _ in range(self.n_types)],
+            # The following are for games with two types
+            [[1., 0.], [0., 0.]],
+            [[0., 1.], [0., 0.]],
+            [[0., 0.], [1., 0.]],
+            [[0., 0.], [0., 1.]],
+            [[0.1, 0.4], [0.2, 0.3]]
+        ]
+        self.dist = self.preset_dists[dist_n]
         self.types = None
 
     def _sample_types(self):
@@ -190,12 +199,4 @@ four_games = [[mp_payoffs, pd_payoffs], [coord_payoffs, bos_payoffs]]
 
 class IncompleteFour(IncompleteInfoGame):
     def __init__(self, dist_n=0):
-        self.preset_dists = [
-            'unif',
-            [[1., 0.], [0., 0.]],
-            [[0., 1.], [0., 0.]],
-            [[0., 0.], [1., 0.]],
-            [[0., 0.], [0., 1.]],
-            [[0.1, 0.4], [0.2, 0.3]]
-        ]
-        super().__init__(four_games, dist=self.preset_dists[dist_n])
+        super().__init__(four_games, dist_n=dist_n)
