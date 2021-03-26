@@ -76,7 +76,7 @@ def experiment(game, game_type, info_type, step_type, iterations, gamma, lr, tra
         policies.append((p1_a1, p2_a1))
     print()
 
-    save_pstfix = "{}_{}_{}_{}".format(game, info_type, game_type, step_type)
+    save_pstfix = "_{}_{}_{}_{}".format(game, info_type, game_type, step_type)
 
     ### From standard play
     x = [r1 for r1, r2 in results]
