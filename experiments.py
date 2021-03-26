@@ -4,12 +4,13 @@ import argparse
 import torch
 import numpy as np
 
-from utils import plot_results, save_results, load_results, plot_again, save_policies, seed, save_results_and_policies
+from utils import plot_results, save_results, seed, save_results_and_policies, save_plot
 from test_utils import test_iterated, test_cross_iterated, incomplete_oneshot_test
 from games import get_game
 from train_loop import train
 from train_steps import naive_step, lola_step
 from value_functions import get_value_incomplete_oneshot, get_value_iterated
+from quicksave import QuickSaver
 
 def train_test_incomplete_oneshot(env, step_func, gamma, lr, train_ep):
     """
@@ -62,7 +63,7 @@ step_funcs = {
     'naive': naive_step,
 }
 
-def experiment(game, game_type, info_type, step_type, iterations, gamma, lr, train_ep, dist_n=None):
+def experiment(game, game_type, info_type, step_type, iterations, gamma, lr, train_ep, dist_n, config):
     results = []
     policies = []
     env = get_game(game, dist_n=dist_n)
@@ -76,28 +77,29 @@ def experiment(game, game_type, info_type, step_type, iterations, gamma, lr, tra
         policies.append((p1_a1, p2_a1))
     print()
 
-    save_pstfix = "_{}_{}_{}_{}".format(game, info_type, game_type, step_type)
+    save_folder = "{}_{}_{}_{}".format(game, info_type, game_type, step_type)
+    qs = QuickSaver(subfolder=save_folder)
+    qs.save_json(config, name='config')
 
     ### From standard play
     x = [r1 for r1, r2 in results]
     y = [r2 for r1, r2 in results]
-    plot_results(x, y, game=game, save=save_pstfix, color='orange')
-    save_results('Pfs' + save_pstfix, x, y)
+    plot_results(x, y, game=game, color='orange')
 
     ### Save policies
     p1s = [a.tolist() for a, b in policies]
     p2s = [b.tolist() for a, b in policies]
-    save_policies('Pols' + save_pstfix, p1s, p2s)
 
     ### Save all together
-    save_results_and_policies('All' + save_pstfix, x, y, p1s, p2s)
+    save_results_and_policies(qs, 'Pols_res', x, y, p1s, p2s)
     
     ### Cross play
     if game_type == 'iterated':
-        r1_cross, r2_cross = test_cross_iterated(env, p1s, p2s)
-        plot_results(r1_cross, r2_cross, game=game, save=save_pstfix, color='blue')
-        save_results('XPfs' + save_pstfix, r1_cross, r2_cross)
+        r1_cross, r2_cross = test_cross_iterated(env, p1s, p2s, cross_tests=iterations)
+        plot_results(r1_cross, r2_cross, game=game, color='blue')
+        save_results(qs, 'XPfs', r1_cross, r2_cross)
 
+    save_plot(qs, 'results')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -128,4 +130,4 @@ if __name__ == '__main__':
 
     seed(args.seed)
     experiment(args.game,args.game_type, args.info_type, args.step_type, 
-        args.iterations, args.gamma, args.learning_rate, args.train_ep, args.dist_n)
+        args.iterations, args.gamma, args.learning_rate, args.train_ep, args.dist_n, vars(args))

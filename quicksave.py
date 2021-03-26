@@ -9,7 +9,7 @@ class QuickSaver():
     Saving args:
         obj (depends on function): thing to save
         name (str): if not None, use this as the base for making a savename 
-        replace (bool): if True, will replace 'name.ext' file if it already exists. \
+        replace (bool): if True, will replace 'name.ext' file if it already exists.
             If False, will add a '_n' to the end of the filename, with 'n' higher 
             than any currently existing 'n' for that name base
         inc_date (bool): whether or not to add date to filename
@@ -17,14 +17,22 @@ class QuickSaver():
     Loading args:
         name (str): name of file to load in self.fileloc, including extension
     """
-    def __init__(self, file_loc='quick_saves'):
+    def __init__(self, file_loc='quick_saves', subfolder=None):
         self.file_loc = file_loc
         os.makedirs(self.file_loc, exist_ok=True)
+
+        if subfolder is not None:
+            subfolder = self.inc_name(subfolder, ext='')
+            self.file_loc = os.path.join(self.file_loc, subfolder)
+            os.makedirs(self.file_loc)
 
     def inc_name(self, name, ext):
         all_dirs = os.listdir(self.file_loc)
         rel_dirs = [d for d in all_dirs if d.startswith(name + '_') and d.endswith(ext)]
-        ns = [int(d[len(name)+1:-len(ext)]) for d in rel_dirs] + [0]
+        if len(ext) > 0:
+            ns = [int(d[len(name)+1:-len(ext)]) for d in rel_dirs] + [0]
+        else:
+            ns = [int(d[len(name)+1:]) for d in rel_dirs] + [0]
 
         n = max(ns)
         name = name + "_{}"
