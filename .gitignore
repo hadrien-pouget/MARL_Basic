@@ -145,4 +145,3 @@ cython_debug/
 
 quick_saves/*
 *.png
-test.py

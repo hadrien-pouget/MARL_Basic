@@ -48,7 +48,7 @@ def save_results_and_policies(qs, name, xs, ys, p1s, p2s):
 #     xs, ys = load_results('XPfs_' + game + '_' + str(m) + '.json')
 #     plot_results(xs, ys, game=game, save=game, color='blue')
 
-def plot_results(xs, ys, game=None, color=None):
+def plot_results(env, xs, ys, game=None, color=None):
     nx = (0.5 - np.random.rand(len(xs))) * 0.2
     ny = (0.5 - np.random.rand(len(xs))) * 0.2
     xs = np.array(xs) + nx
@@ -58,14 +58,8 @@ def plot_results(xs, ys, game=None, color=None):
     else:
         sns.scatterplot(x=xs, y=ys)
 
-    polygons = {
-        'PD': ([-3, -1, 0, -2], [0, -1, -3, -2]),
-        'BoS': ([0, 2, 4], [0, 2, 1]),
-        # TODO: This is currently for the uniform dist version.
-        'Incomp_four': ([1.5, 1.75, 0.0, -0.75, 0.0], [-0.5, 0.5, 1.25, 0.5, -0.5]), # produced using outcomes_polygon function
-    }
-    if game in polygons:
-        plt.fill(polygons[game][0], polygons[game][1], alpha=0.2, color='purple')
+    polygon = env.outcomes_polygon()
+    plt.fill(polygon[0], polygon[1], alpha=0.2, color='purple')
 
 def save_plot(qs, name):
     plt.savefig(os.path.join(qs.file_loc, name + '.png'))
