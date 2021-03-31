@@ -65,8 +65,7 @@ if __name__ == '__main__':
 
     seed(args.seed)
 
-    max_steps = 1 if args.oneshot else 100
-    env = get_game(args.game, max_steps=max_steps, dist_n=args.dist_n, p=args.p, a=args.a)
+    env = get_game(args.game, oneshot=args.oneshot, dist_n=args.dist_n, p=args.p, a=args.a)
 
     experiment(env, args.step_type, args.training_rounds, args.gamma, args.learning_rate, 
         args.train_ep, args.oneshot, args.test_ep, vars(args))

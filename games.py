@@ -5,13 +5,18 @@ import numpy as np
 from scipy.spatial import ConvexHull
 import torch
 
-def get_game(game, **kwargs):
+def get_game(game, oneshot=False, **kwargs):
     if game == 'IncompFour':
-        return IncompleteFour(kwargs['max_steps'], kwargs['dist_n'])
+        game = IncompleteFour(dist_n=kwargs['dist_n'])
     elif game == 'DistInf':
-        return DistInf(kwargs['p'], kwargs['a'], kwargs['max_steps'])
+        game = DistInf(p=kwargs['p'], a=kwargs['a'])
     else:
-        return None
+        raise NotImplementedError("This game doesn't exist")
+    
+    if oneshot:
+        game.max_steps = 1
+
+    return game
 
 class IncompleteInfoGame():
     """ 
@@ -26,7 +31,7 @@ class IncompleteInfoGame():
         max_steps (int)
         action_names (optional list of str): for clarity when printing payoffs
     """
-    def __init__(self, games, max_steps, dist=None, dist_n=0):
+    def __init__(self, games, max_steps=100, dist=None, dist_n=0):
         self.pfs = games
         self.n_types = len(games)
         self.n_games = self.n_types ** 2
@@ -186,5 +191,5 @@ class DistInf(IncompleteInfoGame):
         twotwo = [[(bos[a1][a2][0]*bosp + prefB[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefA[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
         games = [[oneone, bos], [bos, twotwo]]
         dist = [[oneonep, onetwop], [onetwop, oneonep]]
-        super().__init__(games, max_steps=1, dist=dist)
+        super().__init__(games, max_steps=max_steps, dist=dist)
         self.name = "DistInf"

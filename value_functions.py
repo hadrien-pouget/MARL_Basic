@@ -6,6 +6,10 @@ def get_value_incomplete_oneshot(payoffs, p1, p2, dist, gamma):
     p1 = torch.sigmoid(p1)
     p2 = torch.sigmoid(p2)
 
+    # Only the initial state matters
+    p1 = p1[:,-1]
+    p2 = p2[:,-1]
+
     p11, p12 = p1.split([1,1])
     # Player 1, types 1 and 2
     x2_p11 = torch.cat([p11, p11])
