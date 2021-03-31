@@ -188,7 +188,7 @@ class DistInf(IncompleteInfoGame):
         onetwop = 0.25 * (1-p)
 
         oneone = [[(bos[a1][a2][0]*bosp + prefA[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefA[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
-        twotwo = [[(bos[a1][a2][0]*bosp + prefB[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefA[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
+        twotwo = [[(bos[a1][a2][0]*bosp + prefB[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefB[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
         games = [[oneone, bos], [bos, twotwo]]
         dist = [[oneonep, onetwop], [onetwop, oneonep]]
         super().__init__(games, max_steps=max_steps, dist=dist)
