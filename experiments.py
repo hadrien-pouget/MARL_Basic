@@ -17,9 +17,7 @@ step_funcs = {
     'naive': naive_step,
 }
 
-def experiment(game, step_type, training_rounds, gamma, lr, train_ep, dist_n, oneshot, test_ep, config):
-    max_steps = 1 if oneshot else 100
-    env = get_game(game, max_steps, dist_n)
+def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, config):
     step_func = step_funcs[step_type]
     value_func = get_value_incomplete_oneshot if oneshot else get_value_incomplete_iterated
 
@@ -28,13 +26,13 @@ def experiment(game, step_type, training_rounds, gamma, lr, train_ep, dist_n, on
     r1s, r2s = several_test(env, p1s, p2s, test_ep)
     xr1s, xr2s = several_cross_test(env, p1s, p2s, test_ep, n_crosses=training_rounds)
 
-    save_folder = "{}_{}_{}".format(game, step_type, "oneshot" if oneshot else "iterated")
+    save_folder = "{}_{}_{}".format(env.name, step_type, "oneshot" if oneshot else "iterated")
     qs = QuickSaver(subfolder=save_folder)
     qs.save_json(config, name='config')
 
     ### Plot results
-    plot_results(env, r1s, r2s, game=game, color='orange')
-    plot_results(env, xr1s, xr2s, game=game, color='blue')
+    plot_results(env, r1s, r2s, color='orange')
+    plot_results(env, xr1s, xr2s, color='blue')
     save_plot(qs, 'results')
 
     ### Save results
@@ -51,7 +49,8 @@ if __name__ == '__main__':
         'lola'
     ])
     parser.add_argument('--game', default='IncompFour', choices=[
-        'IncompFour'
+        'IncompFour',
+        'DistInf'
     ])
     parser.add_argument('--training_rounds', '-tr', default=40, type=int)
     parser.add_argument('--train_ep', '-te', default=100, type=int)
@@ -60,8 +59,14 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', '-lr', default=1, type=float)
     parser.add_argument('--seed', '-s', default=1234)
     parser.add_argument('--dist_n', '-d', default=0, type=int)
+    parser.add_argument('--p', default=0.7, type=int)
+    parser.add_argument('--a', default=2, type=int)
     args = parser.parse_args()
 
     seed(args.seed)
-    experiment(args.game, args.step_type, args.training_rounds, args.gamma, args.learning_rate, 
-        args.train_ep, args.dist_n, args.oneshot, args.test_ep, vars(args))
+
+    max_steps = 1 if args.oneshot else 100
+    env = get_game(args.game, max_steps=max_steps, dist_n=args.dist_n, p=args.p, a=args.a)
+
+    experiment(env, args.step_type, args.training_rounds, args.gamma, args.learning_rate, 
+        args.train_ep, args.oneshot, args.test_ep, vars(args))
