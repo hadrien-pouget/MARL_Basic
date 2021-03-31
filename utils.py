@@ -34,13 +34,24 @@ def save_results_and_policies(qs, name, xs, ys, p1s, p2s):
     json = {n: (x, y, p1, p2) for n, (x, y, p1, p2) in enumerate(zip(xs, ys, p1s, p2s))}
     qs.save_json(json, name=name)
 
-# def load_results(name):
-#     dic = QuickSaver().load_json(name)
-#     return dic['p1 payoff'], dic['p2 payoff']
+def load_results_policies(folder):
+    dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, 'Pols_res_0.json'))
+    r1s = [x[0] for k, x in dic.items()]
+    r2s = [x[1] for k, x in dic.items()]
+    p1s = [x[2] for k, x in dic.items()]
+    p2s = [x[3] for k, x in dic.items()]
+    return r1s, r2s, p1s, p2s
 
-# def load_policies(name):
-#     dic = QuickSaver().load_json(name)
-#     return dic['p1 policy'], dic['p2 policy']
+def load_cross_results(folder):
+    dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, 'XPfs_0.json'))
+    xr1s = [x[0] for k, x in dic.items()]
+    xr2s = [x[1] for k, x in dic.items()]
+    return xr1s, xr2s
+
+def load_config(folder):
+    dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, 'config_0.json'))
+    return dic
+
 
 # def plot_again(n, m, game):
 #     xs, ys = load_results('Pfs_' + game + '_' + str(n) + '.json')
@@ -48,7 +59,7 @@ def save_results_and_policies(qs, name, xs, ys, p1s, p2s):
 #     xs, ys = load_results('XPfs_' + game + '_' + str(m) + '.json')
 #     plot_results(xs, ys, game=game, save=game, color='blue')
 
-def plot_results(env, xs, ys, game=None, color=None):
+def plot_results(env, xs, ys, color=None):
     nx = (0.5 - np.random.rand(len(xs))) * 0.2
     ny = (0.5 - np.random.rand(len(xs))) * 0.2
     xs = np.array(xs) + nx

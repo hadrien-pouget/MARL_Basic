@@ -24,7 +24,7 @@ class QuickSaver():
         if subfolder is not None:
             subfolder = self.inc_name(subfolder, ext='')
             self.file_loc = os.path.join(self.file_loc, subfolder)
-            os.makedirs(self.file_loc)
+            os.makedirs(self.file_loc, exist_ok=True)
 
     def inc_name(self, name, ext):
         all_dirs = os.listdir(self.file_loc)
@@ -99,6 +99,10 @@ class QuickSaver():
 
     def load_json(self, name):
         with open(os.path.join(self.file_loc, name), 'r') as f:
+            return json.load(f)
+
+    def load_json_path(self, path):
+        with open(path, 'r') as f:
             return json.load(f)
 
     ### csv, for a list of lists ###
