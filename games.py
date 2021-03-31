@@ -5,9 +5,11 @@ import numpy as np
 from scipy.spatial import ConvexHull
 import torch
 
-def get_game(game, max_steps, dist_n):
+def get_game(game, **kwargs):
     if game == 'IncompFour':
-        return IncompleteFour(max_steps, dist_n)
+        return IncompleteFour(kwargs['max_steps'], kwargs['dist_n'])
+    elif game == 'DistInf':
+        return DistInf(kwargs['p'], kwargs['a'], kwargs['max_steps'])
     else:
         return None
 
@@ -24,7 +26,7 @@ class IncompleteInfoGame():
         max_steps (int)
         action_names (optional list of str): for clarity when printing payoffs
     """
-    def __init__(self, games, max_steps, dist_n=0):
+    def __init__(self, games, max_steps, dist=None, dist_n=0):
         self.pfs = games
         self.n_types = len(games)
         self.n_games = self.n_types ** 2
@@ -40,8 +42,12 @@ class IncompleteInfoGame():
             [[0., 0.], [0., 1.]],
             [[0.1, 0.4], [0.2, 0.3]],
             [[0.02, 0.94], [0.02, 0.02]],
+            [[0.01, 0.97], [0.01, 0.01]],
         ]
-        self.dist = self.preset_dists[dist_n]
+        if dist is None:
+            self.dist = self.preset_dists[dist_n]
+        else:
+            self.dist = dist
 
         self.max_steps = max_steps
         self.types = None
@@ -143,3 +149,42 @@ four_games = [[mp_payoffs, pd_payoffs], [coord_payoffs, bos_payoffs]]
 class IncompleteFour(IncompleteInfoGame):
     def __init__(self, max_steps=100, dist_n=0):
         super().__init__(four_games, max_steps, dist_n=dist_n)
+        self.name = "IncompFour"
+
+class DistInf(IncompleteInfoGame):
+    def __init__(self, p, a, max_steps=100):
+        """
+        p is the probability that they both prefer the same the outcome,
+        a is the magnitude of preference for each outcome
+        both players know p
+        """
+        bos = [
+            [(a,1), (0,0)],
+            [(0,0), (1,a)]
+        ]
+
+        prefA = [
+            [(a,a), (0,0)],
+            [(0,0), (1,1)]
+        ]
+
+        prefB = [
+            [(1,1), (0,0)],
+            [(0,0), (a,a)]
+        ]
+
+        # p(BoS | 1, 1) or p(BoS | 2, 2)
+        bosp = (1-p)/(1+p)
+        # p(prefA | 1, 1) or p(prefB | 2, 2)
+        prefp = (2*p)/(1+p)
+        # p(1, 1) or p(2, 2)
+        oneonep = 0.25 * (1+p)
+        # p(1, 2) or p(2, 1)
+        onetwop = 0.25 * (1-p)
+
+        oneone = [[(bos[a1][a2][0]*bosp + prefA[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefA[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
+        twotwo = [[(bos[a1][a2][0]*bosp + prefB[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefA[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
+        games = [[oneone, bos], [bos, twotwo]]
+        dist = [[oneonep, onetwop], [onetwop, oneonep]]
+        super().__init__(games, max_steps=1, dist=dist)
+        self.name = "DistInf"
