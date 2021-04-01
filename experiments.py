@@ -17,7 +17,7 @@ step_funcs = {
     'naive': naive_step,
 }
 
-def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, config):
+def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, save_folder, config):
     step_func = step_funcs[step_type]
     value_func = get_value_incomplete_oneshot if oneshot else get_value_incomplete_iterated
 
@@ -26,7 +26,6 @@ def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, te
     r1s, r2s = several_test(env, p1s, p2s, test_ep)
     xr1s, xr2s = several_cross_test(env, p1s, p2s, test_ep, n_crosses=training_rounds)
 
-    save_folder = "{}_{}_{}".format(env.name, step_type, "oneshot" if oneshot else "iterated")
     qs = QuickSaver(subfolder=save_folder)
     qs.save_json(config, name='config')
 
@@ -43,6 +42,7 @@ def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, te
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--save_folder', type=str, default="")
     parser.add_argument('--oneshot', action='store_true')
     parser.add_argument('--step_type', '-st', default='naive', choices=[
         'naive',
@@ -67,5 +67,8 @@ if __name__ == '__main__':
 
     env = get_game(args.game, oneshot=args.oneshot, dist_n=args.dist_n, p=args.p, a=args.a)
 
+    if args.save_folder == "":
+        save_folder = "{}_{}_{}".format(env.name, args.step_type, "oneshot" if args.oneshot else "iterated")
+
     experiment(env, args.step_type, args.training_rounds, args.gamma, args.learning_rate, 
-        args.train_ep, args.oneshot, args.test_ep, vars(args))
+        args.train_ep, args.oneshot, args.test_ep, args.save_folder, vars(args))
