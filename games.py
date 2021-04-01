@@ -2,6 +2,7 @@ import random
 import itertools
 
 import numpy as np
+import scipy
 from scipy.spatial import ConvexHull
 import torch
 
@@ -57,6 +58,28 @@ class IncompleteInfoGame():
         self.max_steps = max_steps
         self.types = None
         self.steps_taken = 0
+
+    def game_to_string(self, pfs):
+        action_names = ["A", "B"]
+        max_name = max([len(n) for n in action_names])
+        top = "\n" + " " * max_name + "|"
+        for n in action_names:
+            top += n + "|"
+        bar = "\n" + "-" * (len(top) - 1)
+        mid = ""
+        for i, n1 in enumerate(action_names):
+            mid += "\n" + n1 + " " * (max_name - len(n1)) + "|"
+            for j, n2 in enumerate(action_names):
+                scores = str(pfs[i][j][0]) + ", " + str(pfs[i][j][1])
+                mid += scores + " " * (len(n2) - len(scores)) + "|"
+        return top + bar + mid
+
+    def __str__(self):
+        strs = []
+        for i, gs in enumerate(self.pfs):
+            for j, pfs in enumerate(gs):
+                strs.append("\n{},{}\n".format(i, j) + self.game_to_string(pfs))
+        return "\n".join(strs)
 
     def _sample_types(self):
         tot = 0
@@ -117,11 +140,14 @@ class IncompleteInfoGame():
         return points
 
     def outcomes_polygon(self):
-        points = self.get_pure_outcomes_as_points()
-        hull = ConvexHull(points)
-        polygon_xs = [points[p][0] for p in hull.vertices]
-        polygon_ys = [points[p][1] for p in hull.vertices]
-        return polygon_xs, polygon_ys
+        try:
+            points = self.get_pure_outcomes_as_points()
+            hull = ConvexHull(points)
+            polygon_xs = [points[p][0] for p in hull.vertices]
+            polygon_ys = [points[p][1] for p in hull.vertices]
+            return polygon_xs, polygon_ys
+        except scipy.spatial.qhull.QhullError:
+            return [[],[]]
 
     def gen_rand_policy(self):
         """ 
