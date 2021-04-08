@@ -84,14 +84,16 @@ def plot_from_folder(folder, noise_mag=0.2):
 
 ### For plotting policies in one-shot games with two types
 def oneshot_policy_coord(p):
+    """
+    AA: 0 AB: 1 BA: 2 BB: 3 Not obviously one of these: 4
+    """
     coord = 0
     if p[0][4] < 0.05:
         coord += 2
     if p[1][4] < 0.05:
         coord += 1
-    if p[0][4] > 0.05 and p[0][4] < 0.95:
-        if p[1][4] > 0.05 and p[1][4] < 0.95:
-            coord = 5
+    if (p[0][4] > 0.05 and p[0][4] < 0.95) or (p[1][4] > 0.05 and p[1][4] < 0.95):
+        coord = 4
     return coord
 
 def oneshot_policies_to_coords(ps):
@@ -119,13 +121,10 @@ def coord_to_strat(cs):
     return [labels[c] for c in cs]
 
 def plot_res_with_pol1(folder, noise_mag=0.2):
-    r1s, r2s, p1s, p2s = load_results_policies(folder)
-    xr1s, xr2s = load_cross_results(folder)
+    r1s, r2s, p1s, _ = load_results_policies(folder)
     c1s = oneshot_policies_to_coords(p1s)
-    c2s = oneshot_policies_to_coords(p2s)
 
     r1s, r2s = add_noise(r1s, r2s, mag=noise_mag)
-    xr1s, xr2s = add_noise(xr1s, xr2s, mag=noise_mag)
 
     sns.scatterplot(x=r1s, y=r2s, hue=coord_to_strat(c1s), linewidth=1.3)
 
