@@ -19,10 +19,10 @@ step_funcs = {
 
 def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, save_folder, config):
     step_func = step_funcs[step_type]
-    value_func = get_value_incomplete_oneshot if oneshot else get_value_incomplete_iterated
+    # value_func = get_value_incomplete_oneshot if oneshot else get_value_incomplete_iterated
 
     print("---- Starting ----")
-    p1s, p2s = train_policies(env, training_rounds, value_func, step_func, train_ep, gamma, lr) 
+    p1s, p2s = train_policies(env, training_rounds, step_func, train_ep, gamma, lr) 
     r1s, r2s = several_test(env, p1s, p2s, test_ep)
     xr1s, xr2s = several_cross_test(env, p1s, p2s, test_ep, n_crosses=training_rounds)
 
@@ -58,17 +58,19 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', '-g', default=0.96, type=float)
     parser.add_argument('--learning_rate', '-lr', default=1, type=float)
     parser.add_argument('--seed', '-s', default=1234)
-    parser.add_argument('--dist_n', '-d', default=0, type=int)
+    parser.add_argument('--prior_n', default=0, type=int)
     parser.add_argument('--p', default=0.7, type=int)
     parser.add_argument('--a', default=2, type=int)
     args = parser.parse_args()
 
     seed(args.seed)
 
-    env = get_game(args.game, oneshot=args.oneshot, dist_n=args.dist_n, p=args.p, a=args.a)
+    env = get_game(args.game, oneshot=args.oneshot, prior_n=args.prior_n, p=args.p, a=args.a)
 
     if args.save_folder == "":
-        save_folder = "{}_{}_{}".format(env.name, args.step_type, "oneshot" if args.oneshot else "iterated")
+        save_folder = "{}_{}".format(env.name, args.step_type)
+    else:
+        save_folder = args.save_folder
 
     experiment(env, args.step_type, args.training_rounds, args.gamma, args.learning_rate, 
-        args.train_ep, args.oneshot, args.test_ep, args.save_folder, vars(args))
+        args.train_ep, args.oneshot, args.test_ep, save_folder, vars(args))

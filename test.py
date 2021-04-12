@@ -2,34 +2,13 @@ import random
 
 import numpy as np
 
-def run_env(env, p1, p2):
-    """
-    Run env once, given mean reward per step
-    """
-    s, (t1, t2) = env.reset()
-    s = np.argmax(s)
-    p1, p2 = p1[t1], p2[t2]
-
-    r1s, r2s = [], []
-    done = False
-    while not done:
-        a1 = 0 if random.random() < p1[s] else 1
-        a2 = 0 if random.random() < p2[s] else 1
-
-        s, (r1, r2), done = env.step(a1, a2)
-        s = np.argmax(s)
-        r1s.append(r1)
-        r2s.append(r2)
-
-    return np.mean(r1s), np.mean(r2s)
-
 def test(env, p1, p2, test_e):
     """
     Given two policies, test them test_e times and give the mean reward per step
     """
     all_r1s, all_r2s = [], []
     for _ in range(test_e):
-        r1, r2 = run_env(env, p1, p2)
+        r1, r2 = env.play_game(p1, p2)
         all_r1s.append(r1)
         all_r2s.append(r2)
 
