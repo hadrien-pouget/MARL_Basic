@@ -3,6 +3,7 @@ import pickle
 import json
 import csv
 from datetime import datetime
+import re
 
 class QuickSaver():
     """
@@ -28,7 +29,8 @@ class QuickSaver():
 
     def inc_name(self, name, ext):
         all_dirs = os.listdir(self.file_loc)
-        rel_dirs = [d for d in all_dirs if d.startswith(name + '_') and d.endswith(ext)]
+        p = re.compile(name + '_' + "[0-9]+" + ext)
+        rel_dirs = [d for d in all_dirs if re.fullmatch(p, d)]
         if len(ext) > 0:
             ns = [int(d[len(name)+1:-len(ext)]) for d in rel_dirs] + [0]
         else:
