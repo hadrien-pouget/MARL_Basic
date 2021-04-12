@@ -6,10 +6,9 @@ import numpy as np
 
 from utils import plot_results, save_results, seed, save_results_and_policies, save_plot
 from test import several_test, several_cross_test
-from games import get_game
+from games import get_game, ALL_GAMES
 from train import train_policies
 from train_steps import naive_step, lola_step
-from value_functions import get_value_incomplete_oneshot, get_value_incomplete_iterated
 from quicksave import QuickSaver
 
 step_funcs = {
@@ -48,10 +47,7 @@ if __name__ == '__main__':
         'naive',
         'lola'
     ])
-    parser.add_argument('--game', default='IncompFour', choices=[
-        'IncompFour',
-        'DistInf'
-    ])
+    parser.add_argument('--game', default='IncompFour', choices=ALL_GAMES)
     parser.add_argument('--training_rounds', '-tr', default=40, type=int)
     parser.add_argument('--train_ep', '-te', default=100, type=int)
     parser.add_argument('--test_ep', '-tee', default=100, type=int)

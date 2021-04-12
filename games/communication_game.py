@@ -45,8 +45,8 @@ class BinCommunicationGame(IncompleteInfoGame):
         s2 = 0 if random.random() < get_param_p2(p2, types[1], s1) else 1
 
         # pick actions
-        a1 = get_param_p1(p1, types[0], s1, s2)
-        a2 = get_param_p2(p2, types[1], s1, s2)
+        a1 = 0 if random.random() < get_param_p1(p1, types[0], s1, s2) else 1
+        a2 = 0 if random.random() < get_param_p2(p2, types[1], s1, s2) else 1
 
         return self.step(a1, a2)
 
