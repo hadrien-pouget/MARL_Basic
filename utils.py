@@ -107,6 +107,10 @@ def oneshot_coords_to_heatmap(c1s, c2s):
     return hmap
 
 def plot_oneshot_policies(folder):
+    """ 
+    Makes a heatmap of policies. X-axis is all combinations of p1's policies for each type,
+    Y-axis is p2
+    """
     r1s, r2s, p1s, p2s = load_results_policies(folder)
     c1s = oneshot_policies_to_coords(p1s)
     c2s = oneshot_policies_to_coords(p2s)
@@ -121,6 +125,10 @@ def coord_to_strat(cs):
     return [labels[c] for c in cs]
 
 def plot_res_with_pol1(folder, noise_mag=0.2):
+    """
+    For plotting results colour-coded by the p1's policy
+    This is for use with one-shot policies from mem1 games
+    """
     r1s, r2s, p1s, _ = load_results_policies(folder)
     c1s = oneshot_policies_to_coords(p1s)
 
