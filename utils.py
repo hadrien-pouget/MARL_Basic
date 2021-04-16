@@ -73,8 +73,8 @@ def plot_from_folder(folder, noise_mag=0.2):
     r1s, r2s = add_noise(r1s, r2s, mag=noise_mag)
     xr1s, xr2s = add_noise(xr1s, xr2s, mag=noise_mag)
 
-    sns.scatterplot(x=r1s, y=r2s, fc='none', ec='orange', linewidth=1.3)
-    sns.scatterplot(x=xr1s, y=xr2s, fc='none', ec='blue', linewidth=1.3)
+    sns.scatterplot(x=r1s, y=r2s, fc='none', ec='orange', linewidth=1.3, label="Jointly Trained")
+    sns.scatterplot(x=xr1s, y=xr2s, fc='none', ec='blue', linewidth=1.3, label="Cross Tests")
 
     config = load_config(folder)
     env = get_game(**config, max_steps=100)
