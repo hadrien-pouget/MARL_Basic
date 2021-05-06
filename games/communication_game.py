@@ -148,6 +148,48 @@ class DistInfComms(BinCommunicationGame):
 
         return MI1, MI2
 
+    def get_equilibria(self, p1s, p2s):
+        """
+        Given a list of p1s and p2s, return the equilibria
+        """
+        ### Mutual information between signals and types, and signals and actions
+        MIts = [self.MI_ts(p1, p2) for p1, p2 in zip(p1s, p2s)]
+        MIas = [self.MI_as(p1, p2) for p1, p2 in zip(p1s, p2s)]
+
+        ### Equilibrium with no information shared through messages (Babbling or Coordination)
+        all_ps = set(range(len(p1s)))
+        no_info1 = set([i for i in range(len(MIts)) if MIts[i][0] < 0.1])
+        no_info2 = set([i for i in range(len(MIts)) if MIts[i][1] < 0.1])
+        info1 = set([i for i in range(len(MIts)) if MIts[i][0] > 0.1])
+        info2 = set([i for i in range(len(MIts)) if MIts[i][1] > 0.1])
+        ig_sig1  = set([i for i in range(len(MIas)) if MIas[i][0] < 0.1])
+        ig_sig2  = set([i for i in range(len(MIas)) if MIas[i][1] < 0.1])
+        sig1 = set([i for i in range(len(MIas)) if MIas[i][0] > 0.1])
+        sig2 = set([i for i in range(len(MIas)) if MIas[i][1] > 0.1])
+
+        no_info = no_info1.intersection(no_info2)
+        info = info1.intersection(info2)
+        ig_sig  = ig_sig1.intersection(ig_sig2)
+        sig = sig1.intersection(sig2)
+
+        babble = no_info.intersection(ig_sig)
+        coord = no_info.intersection(sig)
+        leader = no_info1.intersection(info2.intersection(sig1))
+        comm = info
+
+        res = [babble, coord, leader, comm]
+        # Sanity check
+        for r1 in range(len(res)):
+            for r2 in range(r1+1, len(res)):
+                if len(res[r1].intersection(res[r2])) != 0:
+                    print("Overlap in sets of equilibria")
+
+        other = all_ps.difference(babble.union(coord).union(leader).union(comm))
+        res.append(other)
+
+        return res
+
+
 def get_param_p1(p1, t, sent=None, rec=None):
     """
     sent and rec - should have both or neither be None
