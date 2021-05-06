@@ -1,6 +1,7 @@
 import random
-
+from itertools import product
 import torch
+import numpy as np
 
 from games.base_games import IncompleteInfoGame
 
@@ -89,6 +90,63 @@ class DistInfComms(BinCommunicationGame):
         prior = [[oneonep, onetwop], [onetwop, oneonep]]
         super().__init__(games, prior=prior)
         self.name = "DistInfComms"
+
+    def calc_pt2s2(self, p2, t2, s2, pt1s1):
+        S = 0 # p(s2_t2)
+        for t1 in [0,1]:
+            for s1 in [0,1]:
+                ps2_t2s1 = p2[(t2*2)+s1] if s2==0 else 1 - p2[(t2*2)+s1]
+                S += ps2_t2s1 * pt1s1[(t1*2)+s1]
+        return S * 0.5
+
+    def MI_ts(self, p1, p2):
+        """
+        Mutual information between type and signal for p1 and p2
+        In this case, 0.6 is max; completely predictive
+        """
+        ts = list(product([0,1], repeat=2))
+        # p(t,s) = p(t)p(s|t)
+        pt1s1 = [0.5 * (p1[t] if s==0 else 1-p1[t]) for t, s in ts]
+
+        # p(s) = sum_t p(s, t)
+        ps1 = [pt1s1[s]+pt1s1[s+2] for s in [0,1]]
+
+        # p(t,s) = p(t)p(s|t)
+        pt2s2 = [self.calc_pt2s2(p2, t2, s2, pt1s1) for t2, s2 in ts]
+
+        # p(s) = sum_t p(s, t)
+        ps2 = [pt2s2[s]+pt2s2[s+2] for s in [0,1]]
+
+        MI1 = sum([pt1s1[(t*2)+s] * np.log(pt1s1[(t*2)+s]/(ps1[s]*0.5)) for t, s in ts])
+        MI2 = sum([pt2s2[(t*2)+s] * np.log(pt2s2[(t*2)+s]/(ps2[s]*0.5)) for t, s in ts])
+
+        return MI1, MI2
+
+    def MI_as(self, p1, p2):
+        """
+        MI between actions and messages
+        """
+        sstt = list(product([0,1], repeat=4))
+        ssa = list(product([0,1], repeat=3))
+        ss = list(product([0,1], repeat=2))
+        tt = list(product([0,1], repeat=2))
+
+        ps1s2_t1t2 = [(p1[t1] if s1==0 else 1-p1[t1])*(p2[(t2*2)+s1] if s2==0 else 1 - p2[(t2*2)+s1]) for s1, s2, t1, t2 in sstt]
+
+        ps1s2 = [sum([self.prior[t1][t2] * ps1s2_t1t2[s1*8+s2*4+t1*2+t2] for t1, t2 in tt]) for s1, s2 in ss]
+
+        pa1_s1s2 = [0.5 * (p1[2+s1*2+s2] if a1==0 else 1 - p1[2+s1*2+s2]) + 0.5 * (p1[6+s1*2+s2] if a1==0 else 1 - p1[6+s1*2+s2]) for s1, s2, a1 in ssa]
+        pa1s1s2 = [pa1_s1s2[s1*4+s2*2+a1]*ps1s2[s1*2+s2] for s1, s2, a1 in ssa]
+        pa1 = [sum([pa1s1s2[s1*4+s2*2+a1] for s1, s2 in ss]) for a1 in [0,1]]
+        MI1 = sum([pa1s1s2[s1*4+s2*2+a1]*np.log(pa1s1s2[s1*4+s2*2+a1]/(pa1[a1]*ps1s2[s1*2+s2])) for s1, s2, a1 in ssa])
+
+
+        pa2_s1s2 = [0.5 * (p2[4+s1*2+s2] if a2==0 else 1 - p2[2+s1*2+s2]) + 0.5 * (p2[8+s1*2+s2] if a2==0 else 1 - p2[6+s1*2+s2]) for s1, s2, a2 in ssa]
+        pa2s1s2 = [pa2_s1s2[s1*4+s2*2+a2]*ps1s2[s1*2+s2] for s1, s2, a2 in ssa]
+        pa2 = [sum([pa2s1s2[s1*4+s2*2+a2] for s1, s2 in ss]) for a2 in [0,1]]
+        MI2 = sum([pa2s1s2[s1*4+s2*2+a2]*np.log(pa2s1s2[s1*4+s2*2+a2]/(pa2[a2]*ps1s2[s1*2+s2])) for s1, s2, a2 in ssa])
+
+        return MI1, MI2
 
 def get_param_p1(p1, t, sent=None, rec=None):
     """
