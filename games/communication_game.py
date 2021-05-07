@@ -1,9 +1,14 @@
+import os
 import random
 from itertools import product
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
 
 from games.base_games import IncompleteInfoGame
+from quicksave import QuickSaver
 
 
 class BinCommunicationGame(IncompleteInfoGame):
@@ -130,6 +135,7 @@ class DistInfComms(BinCommunicationGame):
         ssa = list(product([0,1], repeat=3))
         ss = list(product([0,1], repeat=2))
         tt = list(product([0,1], repeat=2))
+        sa = list(product([0,1], repeat=2))
 
         ps1s2_t1t2 = [(p1[t1] if s1==0 else 1-p1[t1])*(p2[(t2*2)+s1] if s2==0 else 1 - p2[(t2*2)+s1]) for s1, s2, t1, t2 in sstt]
 
@@ -138,15 +144,30 @@ class DistInfComms(BinCommunicationGame):
         pa1_s1s2 = [0.5 * (p1[2+s1*2+s2] if a1==0 else 1 - p1[2+s1*2+s2]) + 0.5 * (p1[6+s1*2+s2] if a1==0 else 1 - p1[6+s1*2+s2]) for s1, s2, a1 in ssa]
         pa1s1s2 = [pa1_s1s2[s1*4+s2*2+a1]*ps1s2[s1*2+s2] for s1, s2, a1 in ssa]
         pa1 = [sum([pa1s1s2[s1*4+s2*2+a1] for s1, s2 in ss]) for a1 in [0,1]]
+        # Between both messages and p1's action
         MI1 = sum([pa1s1s2[s1*4+s2*2+a1]*np.log(pa1s1s2[s1*4+s2*2+a1]/(pa1[a1]*ps1s2[s1*2+s2])) for s1, s2, a1 in ssa])
 
 
         pa2_s1s2 = [0.5 * (p2[4+s1*2+s2] if a2==0 else 1 - p2[2+s1*2+s2]) + 0.5 * (p2[8+s1*2+s2] if a2==0 else 1 - p2[6+s1*2+s2]) for s1, s2, a2 in ssa]
         pa2s1s2 = [pa2_s1s2[s1*4+s2*2+a2]*ps1s2[s1*2+s2] for s1, s2, a2 in ssa]
         pa2 = [sum([pa2s1s2[s1*4+s2*2+a2] for s1, s2 in ss]) for a2 in [0,1]]
+        # Between both messages and p2's action
         MI2 = sum([pa2s1s2[s1*4+s2*2+a2]*np.log(pa2s1s2[s1*4+s2*2+a2]/(pa2[a2]*ps1s2[s1*2+s2])) for s1, s2, a2 in ssa])
 
-        return MI1, MI2
+        pa1s1 = [sum([pa1s1s2[s1*4+s2*2+a1] for s2 in [0,1]]) for s1, a1 in sa]
+        pa1s2 = [sum([pa1s1s2[s1*4+s2*2+a1] for s1 in [0,1]]) for s2, a1 in sa]
+        pa2s1 = [sum([pa2s1s2[s1*4+s2*2+a2] for s2 in [0,1]]) for s1, a2 in sa]
+        pa2s2 = [sum([pa2s1s2[s1*4+s2*2+a2] for s1 in [0,1]]) for s2, a2 in sa]
+
+        ps1 = [sum([ps1s2[s1*2+s2] for s2 in [0,1]]) for s1 in [0,1]]
+        ps2 = [sum([ps1s2[s1*2+s2] for s1 in [0,1]]) for s2 in [0,1]]
+
+        MIa1s1 = sum([pa1s1[s1*2+a1]*np.log(pa1s1[s1*2+a1]/(pa1[a1]*ps1[s1])) for s1, a1 in sa])
+        MIa1s2 = sum([pa1s2[s2*2+a1]*np.log(pa1s2[s2*2+a1]/(pa1[a1]*ps2[s2])) for s2, a1 in sa])
+        MIa2s1 = sum([pa2s1[s1*2+a2]*np.log(pa2s1[s1*2+a2]/(pa2[a2]*ps1[s1])) for s1, a2 in sa])
+        MIa2s2 = sum([pa2s2[s2*2+a2]*np.log(pa2s2[s2*2+a2]/(pa2[a2]*ps2[s2])) for s2, a2 in sa])
+
+        return MI1, MI2, MIa1s1, MIa1s2, MIa2s1, MIa2s2
 
     def get_equilibria(self, p1s, p2s):
         """
@@ -156,25 +177,32 @@ class DistInfComms(BinCommunicationGame):
         MIts = [self.MI_ts(p1, p2) for p1, p2 in zip(p1s, p2s)]
         MIas = [self.MI_as(p1, p2) for p1, p2 in zip(p1s, p2s)]
 
-        ### Equilibrium with no information shared through messages (Babbling or Coordination)
         all_ps = set(range(len(p1s)))
         no_info1 = set([i for i in range(len(MIts)) if MIts[i][0] < 0.1])
         no_info2 = set([i for i in range(len(MIts)) if MIts[i][1] < 0.1])
         info1 = set([i for i in range(len(MIts)) if MIts[i][0] > 0.1])
         info2 = set([i for i in range(len(MIts)) if MIts[i][1] > 0.1])
+
+        depends_a1s1 = set([i for i in range(len(MIas)) if MIas[i][2] > 0.1])
+        depends_a1s2 = set([i for i in range(len(MIas)) if MIas[i][3] > 0.1])
+        depends_a2s1 = set([i for i in range(len(MIas)) if MIas[i][4] > 0.1])
+        depends_a2s2 = set([i for i in range(len(MIas)) if MIas[i][5] > 0.1])
+
+        depends_boths_a1 = depends_a1s1.intersection(depends_a1s2)
+        depends_boths_a2 = depends_a2s1.intersection(depends_a2s2)
+
+        botha_depend_boths = depends_boths_a1.intersection(depends_boths_a2)
+
         ig_sig1  = set([i for i in range(len(MIas)) if MIas[i][0] < 0.1])
         ig_sig2  = set([i for i in range(len(MIas)) if MIas[i][1] < 0.1])
-        sig1 = set([i for i in range(len(MIas)) if MIas[i][0] > 0.1])
-        sig2 = set([i for i in range(len(MIas)) if MIas[i][1] > 0.1])
 
         no_info = no_info1.intersection(no_info2)
         info = info1.intersection(info2)
         ig_sig  = ig_sig1.intersection(ig_sig2)
-        sig = sig1.intersection(sig2)
 
         babble = no_info.intersection(ig_sig)
-        coord = no_info.intersection(sig)
-        leader = no_info1.intersection(info2.intersection(sig1))
+        coord = no_info.intersection(botha_depend_boths)
+        leader = no_info1.intersection(depends_a1s2.intersection(depends_a2s2))
         comm = info
 
         res = [babble, coord, leader, comm]
@@ -182,12 +210,35 @@ class DistInfComms(BinCommunicationGame):
         for r1 in range(len(res)):
             for r2 in range(r1+1, len(res)):
                 if len(res[r1].intersection(res[r2])) != 0:
-                    print("Overlap in sets of equilibria")
+                    print("Overlap in sets of equilibria, {} {}".format(r1, r2))
 
         other = all_ps.difference(babble.union(coord).union(leader).union(comm))
         res.append(other)
 
         return res
+
+    def plot_with_equilibria(self, folder):
+        dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, 'Pols_res_0.json'))
+        r1s = [x[0] for k, x in dic.items()]
+        r2s = [x[1] for k, x in dic.items()]
+        p1s = [x[2] for k, x in dic.items()]
+        p2s = [x[3] for k, x in dic.items()]
+
+        equi = self.get_equilibria(p1s, p2s)
+        names = ["Babble", "Coord", "Leader", "Comm", "Other"]
+
+        hues = []
+        for i in range(len(r1s)):
+            for e, eq in enumerate(equi):
+                if i in eq:
+                    hues.append(names[e])
+                    break
+
+        colours = {names[n]:'C{}'.format(n) for n in range(len(names))}
+        sns.scatterplot(x=r1s, y=r2s, hue=hues, linewidth=1.3, palette=colours)
+
+        polygon = self.outcomes_polygon()
+        plt.fill(polygon[0], polygon[1], alpha=0.1, color='purple')
 
 
 def get_param_p1(p1, t, sent=None, rec=None):
