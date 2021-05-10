@@ -18,7 +18,6 @@ step_funcs = {
 
 def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, save_folder, config):
     step_func = step_funcs[step_type]
-    # value_func = get_value_incomplete_oneshot if oneshot else get_value_incomplete_iterated
 
     print("---- Starting ----")
     p1s, p2s = train_policies(env, training_rounds, step_func, train_ep, gamma, lr) 

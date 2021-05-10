@@ -17,7 +17,9 @@ def train(env, p1, p2, step_func, n_episodes, gamma, lr, verbose=0):
         print()
         print("---- Beginning training ----")
     for e in range(n_episodes):
-        v1, v2 = env.get_value(p1, p2, gamma=gamma)
+        p1_sig = torch.sigmoid(p1)
+        p2_sig = torch.sigmoid(p2)
+        v1, v2 = env.get_value(p1_sig, p2_sig, gamma=gamma)
         if verbose > 1:
             with torch.no_grad():
                 print("E {:3} | v1: {:0.2f} | v2: {:0.2f} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(e+1, v1.item(), v2.item(), *torch.sigmoid(p1).tolist(), *torch.sigmoid(p2).tolist()))
@@ -27,6 +29,8 @@ def train(env, p1, p2, step_func, n_episodes, gamma, lr, verbose=0):
 
     if verbose > 0:
         with torch.no_grad():
-            v1, v2 = env.get_value(env.prior, p1, p2)
+            p1_sig = torch.sigmoid(p1)
+            p2_sig = torch.sigmoid(p2)
+            v1, v2 = env.get_value(p1_sig, p2_sig, gamma=gamma)
             print("E   F | v1: {:0.2f} | v2: {:0.2f} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(v1.item(), v2.item(), *torch.sigmoid(p1).tolist(), *torch.sigmoid(p2).tolist()))
     return p1.detach().clone(), p2.detach().clone()

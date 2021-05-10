@@ -323,10 +323,6 @@ def get_value_bincomms_oneshot(payoffs, p1, p2, ts):
 
 
 def get_value_incomplete_bincomms_oneshot(payoffs, p1, p2, dist):
-    # Turn into probabilities
-    p1 = torch.sigmoid(p1)
-    p2 = torch.sigmoid(p2)
-
     vs_per_game_1 = []
     vs_per_game_2 = []
 
