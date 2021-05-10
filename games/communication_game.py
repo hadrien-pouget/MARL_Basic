@@ -18,7 +18,7 @@ class BinCommunicationGame(IncompleteInfoGame):
     then p2 to p1, then they simultaneously take an action (A or B)
     """
     def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=0, prior_2_param=0):
-        super().__init__(payoffs, prior_1=prior_1, prior_2=prior_1, prior_1_param=prior_1_param, prior_2_param=prior_2_param)
+        super().__init__(payoffs, prior_1=prior_1, prior_2=prior_2, prior_1_param=prior_1_param, prior_2_param=prior_2_param)
         # 0: inital 1: after first message 2: after second message 3: done
         self.state = 0
 
