@@ -5,7 +5,7 @@ import torch
 import numpy as np
 
 from utils import plot_results, save_results, seed, save_results_and_policies, save_plot
-from test import several_test, several_cross_test
+from test import several_test_exact, several_cross_test_exact
 from games import get_game, ALL_GAMES
 from train import train_policies
 from train_steps import naive_step, lola_step
@@ -22,8 +22,8 @@ def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, te
 
     print("---- Starting ----")
     p1s, p2s = train_policies(env, training_rounds, step_func, train_ep, gamma, lr) 
-    r1s, r2s = several_test(env, p1s, p2s, test_ep)
-    xr1s, xr2s = several_cross_test(env, p1s, p2s, test_ep, n_crosses=training_rounds)
+    r1s, r2s = several_test_exact(env, p1s, p2s)
+    xr1s, xr2s = several_cross_test_exact(env, p1s, p2s, n_crosses=training_rounds)
 
     qs = QuickSaver(subfolder=save_folder)
     qs.save_json(config, name='config')

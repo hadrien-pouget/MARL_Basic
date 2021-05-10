@@ -40,6 +40,9 @@ class BinCommunicationGame(IncompleteInfoGame):
         if prior is None:
             prior = self.prior
         return get_value_incomplete_bincomms_oneshot(self.pfs, p1, p2, prior)
+    
+    def get_expected_step_payoffs(self, p1, p2, **kwargs):
+        return self.get_value(p1, p2, **kwargs)
 
     def play_game(self, p1, p2):
         types = self.reset()

@@ -49,6 +49,13 @@ class IncompleteInfoGame(ABC):
         pass
 
     @abstractmethod
+    def get_expected_step_payoffs(self, p1, p2, **kwargs):
+        """
+        return the expected value of one step of the game
+        """
+        pass
+
+    @abstractmethod
     def play_game(self, p1, p2):
         pass
 

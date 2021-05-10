@@ -4,6 +4,7 @@ import torch
 import numpy as np
 
 from games.base_games import IncompleteInfoGame
+from test import test
 
 pd_payoffs = [
     [(-1, -1), (-3, 0)], 
@@ -74,6 +75,13 @@ class Mem1Game(IncompleteInfoGame):
             return get_value_incomplete_oneshot(self.pfs, p1, p2, prior)
         else:
             return get_value_incomplete_iterated(self.pfs, p1, p2, prior, gamma)
+
+    def get_expected_step_payoffs(self, p1, p2, test_e=100, **kwargs):
+        if self.oneshot:
+            return get_value_incomplete_oneshot(self.pfs, p1, p2, self.prior)
+        else:
+            # For iterated games, this part isn't exact.
+            return test(self, p1, p2, test_e)
 
     def play_game(self, p1, p2):
         """
