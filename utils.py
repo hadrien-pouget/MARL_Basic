@@ -24,20 +24,8 @@ def save_results(qs, name, xs, ys):
     json = {n: (x, y) for n, (x, y) in enumerate(zip(xs, ys))}
     qs.save_json(json, name=name)
 
-def save_results_and_policies(qs, name, xs, ys, p1s, p2s):
-    json = {n: (x, y, p1, p2) for n, (x, y, p1, p2) in enumerate(zip(xs, ys, p1s, p2s))}
-    qs.save_json(json, name=name)
-
-def load_results_policies(folder):
-    dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, 'Pols_res_0.json'))
-    r1s = [x[0] for k, x in dic.items()]
-    r2s = [x[1] for k, x in dic.items()]
-    p1s = [x[2] for k, x in dic.items()]
-    p2s = [x[3] for k, x in dic.items()]
-    return r1s, r2s, p1s, p2s
-
-def load_cross_results(folder):
-    dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, 'XPfs_0.json'))
+def load_results(folder, name):
+    dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, name+'.json'))
     xr1s = [x[0] for k, x in dic.items()]
     xr2s = [x[1] for k, x in dic.items()]
     return xr1s, xr2s
@@ -53,14 +41,14 @@ def add_noise(xs, ys, mag=0.2):
     ys = np.array(ys) + ny
     return xs, ys
 
-def plot_results(env, xs, ys, color=None):
+def plot_results(env, prior, xs, ys, color=None):
     xs, ys = add_noise(xs, ys)
     if color is not None:
         sns.scatterplot(x=xs, y=ys, fc='none', ec=color, linewidth=1.3)
     else:
         sns.scatterplot(x=xs, y=ys)
 
-    polygon = env.outcomes_polygon()
+    polygon = env.outcomes_polygon(prior=prior)
     plt.fill(polygon[0], polygon[1], alpha=0.1, color='purple')
 
 def save_plot(qs, name):
@@ -68,8 +56,8 @@ def save_plot(qs, name):
     plt.clf()
 
 def plot_from_folder(folder, noise_mag=0.2):
-    r1s, r2s, _, _ = load_results_policies(folder)
-    xr1s, xr2s = load_cross_results(folder)
+    r1s, r2s = load_results(folder, name='Pfs')
+    xr1s, xr2s = load_results(folder, name='Xpfs')
     r1s, r2s = add_noise(r1s, r2s, mag=noise_mag)
     xr1s, xr2s = add_noise(xr1s, xr2s, mag=noise_mag)
 
@@ -111,7 +99,7 @@ def plot_oneshot_policies(folder):
     Makes a heatmap of policies. X-axis is all combinations of p1's policies for each type,
     Y-axis is p2
     """
-    r1s, r2s, p1s, p2s = load_results_policies(folder)
+    p1s, p2s = load_results(folder, name='Pols')
     c1s = oneshot_policies_to_coords(p1s)
     c2s = oneshot_policies_to_coords(p2s)
     hmap = oneshot_coords_to_heatmap(c1s, c2s)
@@ -129,7 +117,8 @@ def plot_res_with_pol1(folder, noise_mag=0.2):
     For plotting results colour-coded by the p1's policy
     This is for use with one-shot policies from mem1 games
     """
-    r1s, r2s, p1s, _ = load_results_policies(folder)
+    r1s, r2s = load_results(folder, name='Pfs')
+    p1s, _ = load_results(folder, name='Pols')
     c1s = oneshot_policies_to_coords(p1s)
 
     r1s, r2s = add_noise(r1s, r2s, mag=noise_mag)

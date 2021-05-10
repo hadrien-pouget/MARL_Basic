@@ -4,7 +4,7 @@ import argparse
 import torch
 import numpy as np
 
-from utils import plot_results, save_results, seed, save_results_and_policies, save_plot
+from utils import plot_results, save_results, seed, save_plot
 from test import several_test_exact, several_cross_test_exact
 from games import get_game, ALL_GAMES
 from train import train_policies
@@ -22,22 +22,26 @@ def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, te
 
     print("---- Starting ----")
     p1s, p2s = train_policies(env, training_rounds, step_func, train_ep, gamma, lr) 
-    r1s, r2s = several_test_exact(env, p1s, p2s)
-    xr1s, xr2s = several_cross_test_exact(env, p1s, p2s, n_crosses=training_rounds)
 
     qs = QuickSaver(subfolder=save_folder)
     qs.save_json(config, name='config')
 
-    ### Plot results
-    plot_results(env, r1s, r2s, color='orange')
-    plot_results(env, xr1s, xr2s, color='blue')
-    save_plot(qs, 'results')
+    list_p1s = list(map(lambda p: p.tolist(), p1s))
+    list_p2s = list(map(lambda p: p.tolist(), p2s))
+    save_results(qs, 'Pols', list_p1s, list_p2s)
 
-    ### Save results
-    p1s = list(map(lambda p: p.tolist(), p1s))
-    p2s = list(map(lambda p: p.tolist(), p2s))
-    save_results_and_policies(qs, 'Pols_res', r1s, r2s, p1s, p2s)
-    save_results(qs, 'XPfs', xr1s, xr2s)
+    for name, prior in env.generate_test_priors():
+        r1s, r2s = several_test_exact(env, prior, p1s, p2s)
+        xr1s, xr2s = several_cross_test_exact(env, prior, p1s, p2s, n_crosses=training_rounds)
+    
+        ### Plot results
+        plot_results(env, prior, r1s, r2s, color='orange')
+        plot_results(env, prior, xr1s, xr2s, color='blue')
+        save_plot(qs, name + '_results')
+
+        ### Save results
+        save_results(qs, name + '_Pfs', r1s, r2s)
+        save_results(qs, name + '_XPfs', xr1s, xr2s)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -54,14 +58,18 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', '-g', default=0.96, type=float)
     parser.add_argument('--learning_rate', '-lr', default=1, type=float)
     parser.add_argument('--seed', '-s', default=1234)
-    parser.add_argument('--prior_n', default=0, type=int)
-    parser.add_argument('--p', default=0.7, type=int)
+
+    parser.add_argument('--prior_1_param', nargs='*')
+    parser.add_argument('--prior_2_param', nargs='*')
+
+    # For communication game
     parser.add_argument('--a', default=2, type=int)
     args = parser.parse_args()
 
     seed(args.seed)
 
-    env = get_game(args.game, oneshot=args.oneshot, prior_n=args.prior_n, p=args.p, a=args.a)
+    env = get_game(args.game, oneshot=args.oneshot, 
+        prior_1_param=args.prior_1_param, prior_2_param=args.prior_2_param, a=args.a)
 
     if args.save_folder == "":
         save_folder = "{}_{}".format(env.name, args.step_type)

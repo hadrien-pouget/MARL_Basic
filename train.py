@@ -17,7 +17,7 @@ def train(env, p1, p2, step_func, n_episodes, gamma, lr, verbose=0):
         print()
         print("---- Beginning training ----")
     for e in range(n_episodes):
-        v1, v2 = env.get_value(p1, p2, env.prior, gamma=gamma)
+        v1, v2 = env.get_value(p1, p2, gamma=gamma)
         if verbose > 1:
             with torch.no_grad():
                 print("E {:3} | v1: {:0.2f} | v2: {:0.2f} | p1: {:0.2f} {:0.2f} | p2: {:0.2f} {:0.2f}".format(e+1, v1.item(), v2.item(), *torch.sigmoid(p1).tolist(), *torch.sigmoid(p2).tolist()))

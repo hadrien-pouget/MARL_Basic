@@ -1,13 +1,8 @@
-from .communication_game import DistInfComms
-from .mem1_game import DistInf, IncompleteFour
+from .communication_game import SimpleDistInfComms
 
-ALL_GAMES = ["DistInf", "IncompFour", "DistInfComms"]
+ALL_GAMES = ["SimpleDistInfComms"]
 def get_game(game, **kwargs):
-    if game == "DistInf":
-        return DistInf(p=kwargs['p'], a=kwargs['a'], oneshot=kwargs['oneshot'])
-    if game == "IncompFour":
-        return IncompleteFour(prior_n=kwargs['prior_n'], oneshot=kwargs['oneshot'])
-    if game == "DistInfComms":
-        return DistInfComms(p=kwargs['p'], a=kwargs['a'])
+    if game == "SimpleDistInfComms":
+        return SimpleDistInfComms(prior_1_param=kwargs['prior_1_param'], prior_2_param=kwargs['prior_2_param'], a=kwargs['a'])
     
     raise NotImplementedError("Game not implemented")

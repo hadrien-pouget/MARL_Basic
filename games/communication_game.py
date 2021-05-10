@@ -17,87 +17,29 @@ class BinCommunicationGame(IncompleteInfoGame):
     Players get types, then p1 sends a message (A or B), to p2, 
     then p2 to p1, then they simultaneously take an action (A or B)
     """
-    def __init__(self, payoffs, prior=None, prior_n=0):
-        super().__init__(payoffs, prior=prior, prior_n=0)
+    def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=0, prior_2_param=0):
+        super().__init__(payoffs, prior_1=prior_1, prior_2=prior_1, prior_1_param=prior_1_param, prior_2_param=prior_2_param)
         # 0: inital 1: after first message 2: after second message 3: done
         self.state = 0
-
-    def reset(self):
-        self.state = 0
-        self.types = self.sample_types()
-        return self.types
-
-    def step(self, a1, a2):
-        """
-        When both take actions, without communicating
-        """
-        return self.pfs[self.types[0]][self.types[1]][a1][a2]
 
     def gen_rand_policies(self):
         return torch.randn(10, requires_grad=True), torch.randn(12, requires_grad=True)
 
-    def get_value(self, p1, p2, prior=None, **kwargs):
-        if prior is None:
-            prior = self.prior
-        return get_value_incomplete_bincomms_oneshot(self.pfs, p1, p2, prior)
+    def get_value(self, p1, p2, prior_1=None, prior_2=None, **kwargs):
+        if prior_1 is None:
+            prior_1 = self.prior_1
+
+        if prior_2 is None:
+            prior_2 = self.prior_2
+
+        v1, _ = get_value_incomplete_bincomms_oneshot(self.pfs, p1, p2, prior_1)
+        _, v2 = get_value_incomplete_bincomms_oneshot(self.pfs, p1, p2, prior_2)
+
+        return v1, v2
     
-    def get_expected_step_payoffs(self, p1, p2, **kwargs):
-        return self.get_value(p1, p2, **kwargs)
-
-    def play_game(self, p1, p2):
-        types = self.reset()
-
-        # p1 picks signal
-        s1 = 0 if random.random() < get_param_p1(p1, types[0]) else 1
-
-        # p2 picks signal
-        s2 = 0 if random.random() < get_param_p2(p2, types[1], s1) else 1
-
-        # pick actions
-        a1 = 0 if random.random() < get_param_p1(p1, types[0], s1, s2) else 1
-        a2 = 0 if random.random() < get_param_p2(p2, types[1], s1, s2) else 1
-
-        return self.step(a1, a2)
-
-class DistInfComms(BinCommunicationGame):
-    def __init__(self, p, a):
-        """
-        Implementing game from https://www.cambridge.org/core/journals/international-organization/article/abs/modeling-the-forms-of-international-cooperation-distribution-versus-information/F39FD45847A5593140E975E4EA2D580E
-        with communication.
-        p is the probability that they both prefer the same the outcome,
-        a is the magnitude of preference for each outcome
-        both players know p and a
-        """
-        bos = [
-            [(a,1), (0,0)],
-            [(0,0), (1,a)]
-        ]
-
-        prefA = [
-            [(a,a), (0,0)],
-            [(0,0), (1,1)]
-        ]
-
-        prefB = [
-            [(1,1), (0,0)],
-            [(0,0), (a,a)]
-        ]
-
-        # p(BoS | 1, 1) or p(BoS | 2, 2)
-        bosp = (1-p)/(1+p)
-        # p(prefA | 1, 1) or p(prefB | 2, 2)
-        prefp = (2*p)/(1+p)
-        # p(1, 1) or p(2, 2)
-        oneonep = 0.25 * (1+p)
-        # p(1, 2) or p(2, 1)
-        onetwop = 0.25 * (1-p)
-
-        oneone = [[(bos[a1][a2][0]*bosp + prefA[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefA[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
-        twotwo = [[(bos[a1][a2][0]*bosp + prefB[a1][a2][0]*prefp, bos[a1][a2][1]*bosp + prefB[a1][a2][1]*prefp) for a2 in [0, 1]] for a1 in [0, 1]]
-        games = [[oneone, bos], [bos, twotwo]]
-        prior = [[oneonep, onetwop], [onetwop, oneonep]]
-        super().__init__(games, prior=prior)
-        self.name = "DistInfComms"
+    def get_expected_step_payoffs(self, p1, p2, prior, **kwargs):
+        with torch.no_grad():
+            return self.get_value(p1, p2, prior_1=prior, prior_2=prior, **kwargs)
 
     def calc_pt2s2(self, p2, t2, s2, pt1s1):
         S = 0 # p(s2_t2)
@@ -243,6 +185,50 @@ class DistInfComms(BinCommunicationGame):
         polygon = self.outcomes_polygon()
         plt.fill(polygon[0], polygon[1], alpha=0.1, color='purple')
 
+class SimpleDistInfComms(BinCommunicationGame):
+    def __init__(self, a, prior_1_param, prior_2_param):
+            """
+            Implementing simplified version of game from 
+            https://www.cambridge.org/core/journals/international-organization/article/abs/modeling-the-forms-of-international-cooperation-distribution-versus-information/F39FD45847A5593140E975E4EA2D580E
+            with communication.
+            p is the probability that they both prefer the same the outcome,
+            a is the magnitude of preference for each outcome
+            both players know p and a
+
+            This is simplified in that the player's signals are the same iff the have the same preference
+            (and different iff they're playing BoS)
+            """
+            bos = [
+                [(a,1), (0,0)],
+                [(0,0), (1,a)]
+            ]
+
+            prefA = [
+                [(a,a), (0,0)],
+                [(0,0), (1,1)]
+            ]
+
+            prefB = [
+                [(1,1), (0,0)],
+                [(0,0), (a,a)]
+            ]
+
+            games = [[prefA, bos], [bos, prefB]]
+            priors = []
+            for p in [float(prior_1_param[0]), float(prior_2_param[0])]:
+                priors.append(self.gen_prior(p))
+
+            super().__init__(games, prior_1=priors[0], prior_2=priors[1])
+            self.name = "SimpleDistInfComms"
+
+    def gen_prior(self, p):
+        return [[0.5*p, 0.5*(1-p)], [0.5*(1-p), 0.5*p]]
+
+    def generate_test_priors(self):
+        priors = super().generate_test_priors()
+        for p in range(11):
+            priors.append(("p_{}".format(p), self.gen_prior(p/10)))
+        return priors
 
 def get_param_p1(p1, t, sent=None, rec=None):
     """
