@@ -53,6 +53,9 @@ class BinCommunicationGame(IncompleteInfoGame):
         """
         Mutual information between type and signal for p1 and p2
         In this case, 0.6 is max; completely predictive
+
+        Makes assumption that the probability of each type is 50%,
+        which may not be generally true
         """
         ts = list(product([0,1], repeat=2))
         # p(t,s) = p(t)p(s|t)
@@ -72,10 +75,11 @@ class BinCommunicationGame(IncompleteInfoGame):
 
         return MI1, MI2
 
-    def MI_as(self, p1, p2):
+    def MI_as(self, p1, p2, prior=None):
         """
         MI between actions and messages
         """
+        prior = self.prior_1 if prior is None else prior
         sstt = list(product([0,1], repeat=4))
         ssa = list(product([0,1], repeat=3))
         ss = list(product([0,1], repeat=2))
@@ -84,7 +88,7 @@ class BinCommunicationGame(IncompleteInfoGame):
 
         ps1s2_t1t2 = [(p1[t1] if s1==0 else 1-p1[t1])*(p2[(t2*2)+s1] if s2==0 else 1 - p2[(t2*2)+s1]) for s1, s2, t1, t2 in sstt]
 
-        ps1s2 = [sum([self.prior[t1][t2] * ps1s2_t1t2[s1*8+s2*4+t1*2+t2] for t1, t2 in tt]) for s1, s2 in ss]
+        ps1s2 = [sum([prior[t1][t2] * ps1s2_t1t2[s1*8+s2*4+t1*2+t2] for t1, t2 in tt]) for s1, s2 in ss]
 
         pa1_s1s2 = [0.5 * (p1[2+s1*2+s2] if a1==0 else 1 - p1[2+s1*2+s2]) + 0.5 * (p1[6+s1*2+s2] if a1==0 else 1 - p1[6+s1*2+s2]) for s1, s2, a1 in ssa]
         pa1s1s2 = [pa1_s1s2[s1*4+s2*2+a1]*ps1s2[s1*2+s2] for s1, s2, a1 in ssa]
@@ -114,10 +118,12 @@ class BinCommunicationGame(IncompleteInfoGame):
 
         return MI1, MI2, MIa1s1, MIa1s2, MIa2s1, MIa2s2
 
-    def get_equilibria(self, p1s, p2s):
+    def get_equilibria(self, p1s, p2s, prior=None):
         """
         Given a list of p1s and p2s, return the equilibria
         """
+        prior = self.prior_1 if prior is None else prior
+
         ### Mutual information between signals and types, and signals and actions
         MIts = [self.MI_ts(p1, p2) for p1, p2 in zip(p1s, p2s)]
         MIas = [self.MI_as(p1, p2) for p1, p2 in zip(p1s, p2s)]
