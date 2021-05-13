@@ -4,8 +4,9 @@ import argparse
 import torch
 import numpy as np
 
-from utils import plot_results, save_results, seed, save_plot
-from test import several_test_exact, several_cross_test_exact
+from utils import save_results, seed, save_plot
+from plot_utils import plot_results
+from test import several_test, several_cross_test
 from games import get_game, ALL_GAMES
 from train import train_policies
 from train_steps import naive_step, lola_step
@@ -39,8 +40,8 @@ def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, te
     for name, prior in env.generate_test_priors():
         print("Testing prior", name, "...")
         ### Test policies
-        r1s, r2s = several_test_exact(env, prior, p1s, p2s)
-        xr1s, xr2s = several_cross_test_exact(env, prior, p1s, p2s, n_crosses=training_rounds)
+        r1s, r2s = several_test(env, prior, p1s, p2s)
+        xr1s, xr2s = several_cross_test(env, prior, p1s, p2s, n_crosses=training_rounds)
     
         ### Plot results
         plot_results(env, prior, r1s, r2s, color='orange')

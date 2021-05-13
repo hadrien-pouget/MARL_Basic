@@ -18,15 +18,7 @@ Can use different training steps, based on the gradients from calculating the va
 test.py contains code for testing the policies (although some of the testing code is implemented on the game's end.)
 
 # Visualising
-Can be unique to each env, using jupyter notebooks for now.
+Can be unique to each env, using jupyter notebooks for now. plot_utils.py has some useful stuff
 
 # Utils
-A lot of generally useful functions for visualising, etc are put utils.py
-
-# Notes
-I've removed:
-- some games
-- empirical testing
-- ability to treat game like an environment (with a step and reset function)
-
-from the code, when making it use separate priors. These could pretty easily be added back in.
+A lot of generally useful functions for are put utils.py

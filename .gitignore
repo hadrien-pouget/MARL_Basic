@@ -146,3 +146,4 @@ cython_debug/
 quick_saves/*
 *.png
 nocommit*
+old_notebooks/*

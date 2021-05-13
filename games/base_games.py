@@ -31,6 +31,11 @@ class IncompleteInfoGame(ABC):
             self.prior_2 = prior_2
 
     @abstractmethod
+    def play_game(self, p1, p2):
+        """ play game, return payoffs"""
+        pass
+
+    @abstractmethod
     def gen_rand_policies(self):
         """
         Return random policies p1, p2 for playing the game.
@@ -84,6 +89,21 @@ class IncompleteInfoGame(ABC):
             [[0.01, 0.97], [0.01, 0.01]],
         ]
         return self.preset_dists[prior_n]
+
+    def sample_types(self, prior=None):
+        prior = self.prior_1 if prior is None else prior
+        tot, t1, r, done = 0, -1, random.random(), False
+        while not done:
+            t1 += 1
+            games = prior[t1]
+            t2 = -1
+            for g_prob in games:
+                t2 += 1
+                tot += g_prob
+                if tot >= r:
+                    done = True
+                    break
+        return t1, t2
 
     def game_to_string(self, pfs):
         action_names = ["A", "B"]

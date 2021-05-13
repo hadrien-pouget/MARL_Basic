@@ -18,8 +18,30 @@ class BinCommunicationGame(IncompleteInfoGame):
     """
     def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=0, prior_2_param=0):
         super().__init__(payoffs, prior_1=prior_1, prior_2=prior_2, prior_1_param=prior_1_param, prior_2_param=prior_2_param)
-        # 0: inital 1: after first message 2: after second message 3: done
-        self.state = 0
+
+    def reset(self, prior=None):
+        self.current_game_prior = self.prior_1 if prior is None else prior
+        self.types = self.sample_types(prior=self.current_game_prior)
+        return self.types
+
+    def step(self, a1, a2):
+        return self.pfs[self.types[0]][self.types[1]][a1][a2]
+
+    def play_game(self, p1, p2, prior=None):
+        prior = self.prior_1 if prior is None else prior
+        self.reset(prior)
+
+        # p1 picks signal
+        s1 = 0 if random.random() < get_param_p1(p1, self.types[0]) else 1
+
+        # p2 picks signal
+        s2 = 0 if random.random() < get_param_p2(p2, self.types[1], s1) else 1
+
+        # pick actions
+        a1 = 0 if random.random() < get_param_p1(p1, self.types[0], s1, s2) else 1
+        a2 = 0 if random.random() < get_param_p2(p2, self.types[1], s1, s2) else 1
+
+        return self.step(a1, a2)
 
     def gen_rand_policies(self):
         return torch.randn(10, requires_grad=True), torch.randn(12, requires_grad=True)
