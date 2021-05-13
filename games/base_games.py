@@ -13,7 +13,7 @@ class IncompleteInfoGame(ABC):
     games, that remains constant across the different types of games. It also sets up 
     some useful parameters.
 
-    Assumes there are only two players
+    Assumes there are only two players.
     """ 
     def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=0, prior_2_param=0):
         self.pfs = payoffs
@@ -33,30 +33,34 @@ class IncompleteInfoGame(ABC):
     @abstractmethod
     def gen_rand_policies(self):
         """
-        return random policies p1, p2
+        Return random policies p1, p2 for playing the game.
         """
         pass
 
     @abstractmethod
     def get_value(self, p1, p2, prior_1=None, prior_2=None, **kwargs):
         """
-        get v1, v2 if played using p1 and p2, each according to their own prior.
-        Should use self.prior_[1,2] if None is given.
+        Get v1, v2 if played using p1 and p2, each according to their own prior.
+        Should use self.prior_1 for v1 and self.prior_2 for v2 if None is given.
+        This is used in training to get a gradient, so it should return 
+        a pytorch tensor which has been tracking the gradient.
         """
         pass
 
     @abstractmethod
     def get_expected_step_payoffs(self, p1, p2, prior, **kwargs):
         """
-        return the expected value of one step of the game
+        Return the expected value of one step of the game.
         """
         pass
 
     def generate_test_priors(self):
         """
-        Return priors against which to test. Envs should add more to this list
+        Return priors against which to test, which may be 
+        different from the player's priors.
+        Envs can add more to this list.
         """
-        priors = [] # (name, prior)
+        priors = [] # [(name, prior)]
         priors.append(("Player1", self.prior_1))
         priors.append(("Player2", self.prior_2))
         unif_mix = [[(self.prior_1[a1][a2] + self.prior_2[a1][a2])/2 for a2 in [0,1]] for a1 in [0,1]]
@@ -64,6 +68,10 @@ class IncompleteInfoGame(ABC):
         return priors
 
     def select_prior(self, prior_n):
+        """
+        Some pre-set prior distributions to choose from.
+        Environments don't actually need to use these.
+        """
         self.preset_dists = [
             [[1/self.n_games for _ in range(self.n_types)] for _ in range(self.n_types)],
             # The following are for games with two types

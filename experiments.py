@@ -17,19 +17,28 @@ step_funcs = {
 }
 
 def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, save_folder, config):
+    """
+    Run an experiment where agents are trained and tested (including cross-play)
+
+    training_rounds is the number of pairs of policies trained
+    """
     step_func = step_funcs[step_type]
 
     print("---- Starting ----")
+    ### Train policies
     p1s, p2s = train_policies(env, training_rounds, step_func, train_ep, gamma, lr) 
 
     qs = QuickSaver(subfolder=save_folder)
     qs.save_json(config, name='config')
 
+    ### Save policies
     list_p1s = list(map(lambda p: p.tolist(), p1s))
     list_p2s = list(map(lambda p: p.tolist(), p2s))
     save_results(qs, 'Pols', list_p1s, list_p2s)
 
     for name, prior in env.generate_test_priors():
+        print("Testing prior", name, "...")
+        ### Test policies
         r1s, r2s = several_test_exact(env, prior, p1s, p2s)
         xr1s, xr2s = several_cross_test_exact(env, prior, p1s, p2s, n_crosses=training_rounds)
     

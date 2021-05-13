@@ -10,7 +10,6 @@ sns.set()
 from games.base_games import IncompleteInfoGame
 from quicksave import QuickSaver
 
-
 class BinCommunicationGame(IncompleteInfoGame):
     """
     This is a oneshot game, designed for two players, two types, and two actions.
@@ -121,6 +120,10 @@ class BinCommunicationGame(IncompleteInfoGame):
     def get_equilibria(self, p1s, p2s, prior=None):
         """
         Given a list of p1s and p2s, return the equilibria
+
+        Returned as a list [babble, coord, leader, comm, other]
+        where each item in the list is a set of indices corresponding to
+        the policies in that equilibrium
         """
         prior = self.prior_1 if prior is None else prior
 
@@ -327,7 +330,6 @@ def get_value_bincomms_oneshot(payoffs, p1, p2, ts):
 
     return v1, v2
 
-
 def get_value_incomplete_bincomms_oneshot(payoffs, p1, p2, dist):
     vs_per_game_1 = []
     vs_per_game_2 = []
@@ -346,4 +348,3 @@ def get_value_incomplete_bincomms_oneshot(payoffs, p1, p2, dist):
     v2 = torch.dot(vs_per_game_2, dist)
 
     return v1, v2
-

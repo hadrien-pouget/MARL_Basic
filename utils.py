@@ -10,6 +10,9 @@ sns.set()
 from quicksave import QuickSaver
 from  games import get_game
 
+###
+# Maths-y stuff
+###
 def seed(seed):
     np.random.seed(seed)
     random.seed(seed)
@@ -20,6 +23,9 @@ def zero_grad(tensor):
         tensor.grad.detach_()
         tensor.grad.zero_()
 
+###
+# Saving and Loading
+###
 def save_results(qs, name, xs, ys):
     json = {n: (x, y) for n, (x, y) in enumerate(zip(xs, ys))}
     qs.save_json(json, name=name)
@@ -34,7 +40,20 @@ def load_config(folder):
     dic = QuickSaver().load_json_path(os.path.join('quick_saves', folder, 'config_0.json'))
     return dic
 
+def save_plot(qs, name):
+    """
+    Save the current plot and clear it.
+    """
+    plt.savefig(os.path.join(qs.file_loc, name + '.png'))
+    plt.clf()
+
+###
+# Plotting
+###
 def add_noise(xs, ys, mag=0.2):
+    """
+    Add a small amount of random noise to xs and ys.
+    """
     nx = (0.5 - np.random.rand(len(xs))) * mag
     ny = (0.5 - np.random.rand(len(xs))) * mag
     xs = np.array(xs) + nx
@@ -42,6 +61,9 @@ def add_noise(xs, ys, mag=0.2):
     return xs, ys
 
 def plot_results(env, prior, xs, ys, color=None):
+    """
+    Given some xs and ys, plot them on a scatterplot with some noise.
+    """
     xs, ys = add_noise(xs, ys)
     if color is not None:
         sns.scatterplot(x=xs, y=ys, fc='none', ec=color, linewidth=1.3)
@@ -51,11 +73,11 @@ def plot_results(env, prior, xs, ys, color=None):
     polygon = env.outcomes_polygon(prior=prior)
     plt.fill(polygon[0], polygon[1], alpha=0.1, color='purple')
 
-def save_plot(qs, name):
-    plt.savefig(os.path.join(qs.file_loc, name + '.png'))
-    plt.clf()
-
 def plot_from_folder(folder, noise_mag=0.2):
+    """
+    Load results from folder and make scatterplot with 
+    normal play and cross play.
+    """
     r1s, r2s = load_results(folder, name='Pfs')
     xr1s, xr2s = load_results(folder, name='Xpfs')
     r1s, r2s = add_noise(r1s, r2s, mag=noise_mag)
