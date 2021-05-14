@@ -17,7 +17,7 @@ step_funcs = {
     'naive': naive_step,
 }
 
-def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, save_folder, config):
+def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, test_ep, save_folder, device, config):
     """
     Run an experiment where agents are trained and tested (including cross-play)
 
@@ -27,7 +27,7 @@ def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, te
 
     print("---- Starting ----")
     ### Train policies
-    p1s, p2s = train_policies(env, training_rounds, step_func, train_ep, gamma, lr) 
+    p1s, p2s = train_policies(env, training_rounds, step_func, train_ep, gamma, lr, device) 
 
     qs = QuickSaver(subfolder=save_folder)
     qs.save_json(config, name='config')
@@ -54,36 +54,54 @@ def experiment(env, step_type, training_rounds, gamma, lr, train_ep, oneshot, te
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
+    # General
     parser.add_argument('--save_folder', type=str, default="")
+    parser.add_argument('--game', default='IncompFour', choices=ALL_GAMES)
+
+    # Housekeeping
+    parser.add_argument('--seed', '-s', default=1234)
+    parser.add_argument('--force_cpu', action='store_true')
+
+    # For making the prior
+    parser.add_argument('--prior_1_param', nargs='*', default=[0])
+    parser.add_argument('--prior_2_param', nargs='*', default=[0])
+
+    # For iterated games (or forcing an iterated game to be oneshot)
+    parser.add_argument('--gamma', '-g', default=0.96, type=float)
     parser.add_argument('--oneshot', action='store_true')
+
+    # For communication game
+    parser.add_argument('--a', default=2, type=int,
+        help="Intensity of prefernces in distvinf games")
+    parser.add_argument('--p', default=0.5, type=int, 
+        help="Used for distvinf game, where the prior_param is ignored.")
+
+    # For training and testing
+    parser.add_argument('--training_rounds', '-tr', default=40, type=int)
+    parser.add_argument('--train_ep', '-te', default=100, type=int)
+    parser.add_argument('--learning_rate', '-lr', default=1, type=float)
     parser.add_argument('--step_type', '-st', default='naive', choices=[
         'naive',
         'lola'
     ])
-    parser.add_argument('--game', default='IncompFour', choices=ALL_GAMES)
-    parser.add_argument('--training_rounds', '-tr', default=40, type=int)
-    parser.add_argument('--train_ep', '-te', default=100, type=int)
     parser.add_argument('--test_ep', '-tee', default=100, type=int)
-    parser.add_argument('--gamma', '-g', default=0.96, type=float)
-    parser.add_argument('--learning_rate', '-lr', default=1, type=float)
-    parser.add_argument('--seed', '-s', default=1234)
 
-    parser.add_argument('--prior_1_param', nargs='*')
-    parser.add_argument('--prior_2_param', nargs='*')
-
-    # For communication game
-    parser.add_argument('--a', default=2, type=int)
+    # Parse
     args = parser.parse_args()
 
+    # Process
     seed(args.seed)
 
-    env = get_game(args.game, oneshot=args.oneshot, 
-        prior_1_param=args.prior_1_param, prior_2_param=args.prior_2_param, a=args.a)
+    env = get_game(**vars(args))
 
     if args.save_folder == "":
         save_folder = "{}_{}".format(env.name, args.step_type)
     else:
         save_folder = args.save_folder
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = 'cpu' if args.force_cpu else device
+
     experiment(env, args.step_type, args.training_rounds, args.gamma, args.learning_rate, 
-        args.train_ep, args.oneshot, args.test_ep, save_folder, vars(args))
+        args.train_ep, args.oneshot, args.test_ep, save_folder, device, vars(args))

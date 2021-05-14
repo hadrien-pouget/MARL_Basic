@@ -15,18 +15,18 @@ class IncompleteInfoGame(ABC):
 
     Assumes there are only two players.
     """ 
-    def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=0, prior_2_param=0):
+    def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=[0], prior_2_param=[0]):
         self.pfs = payoffs
         self.n_types = len(payoffs)
         self.n_games = self.n_types ** 2
         self.action_space = len(self.pfs[0][0])
 
         if prior_1 is None:
-            self.prior_1 = self.select_prior(prior_1_param)
+            self.prior_1 = self.select_prior(prior_1_param[0])
         else:
             self.prior_1 = prior_1
         if prior_2 is None:
-            self.prior_2 = self.select_prior(prior_2_param)
+            self.prior_2 = self.select_prior(prior_2_param[0])
         else:
             self.prior_2 = prior_2
 
@@ -36,7 +36,7 @@ class IncompleteInfoGame(ABC):
         pass
 
     @abstractmethod
-    def gen_rand_policies(self):
+    def gen_rand_policies(self, device='cpu'):
         """
         Return random policies p1, p2 for playing the game.
         """
@@ -88,7 +88,7 @@ class IncompleteInfoGame(ABC):
             [[0.02, 0.94], [0.02, 0.02]],
             [[0.01, 0.97], [0.01, 0.01]],
         ]
-        return self.preset_dists[prior_n]
+        return self.preset_dists[int(prior_n)]
 
     def sample_types(self, prior=None):
         prior = self.prior_1 if prior is None else prior

@@ -33,7 +33,7 @@ class Mem1Game(IncompleteInfoGame):
     Iterated game where state is the pair of actions taken in the previous game.
     Oneshot games are implemented as special case of this, where the game is automatically reset at each step.
     """
-    def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=0, prior_2_param=0, oneshot=False):
+    def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=[0], prior_2_param=[0], oneshot=False):
         super().__init__(payoffs, prior_1=prior_1, prior_2=prior_2, prior_1_param=prior_1_param, prior_2_param=prior_2_param)
         self.n_obs = (self.action_space ** 2) + 1
         self.oneshot = oneshot
@@ -62,12 +62,12 @@ class Mem1Game(IncompleteInfoGame):
 
         return result
 
-    def gen_rand_policies(self):
+    def gen_rand_policies(self, device='cpu'):
         """ 
         This should be passed through sigmoid to get a probability.
         This a bit awkward if you're doing oneshot - only the last index will be useful.
         """
-        return torch.randn((self.n_types, self.n_obs), requires_grad=True), torch.randn((self.n_types, self.n_obs), requires_grad=True)
+        return torch.randn((self.n_types, self.n_obs), requires_grad=True, device=device), torch.randn((self.n_types, self.n_obs), requires_grad=True, device=device)
 
     def get_value(self, p1, p2, prior_1=None, prior_2=None, gamma=0.96, **kwargs):
         if prior_1 is None:
@@ -113,6 +113,7 @@ class Mem1Game(IncompleteInfoGame):
             return self.get_value(p1, p2, prior=prior)
         else:
             # For iterated games, do empirical value
+            print('a')
             return test(self, prior, p1, p2, 100)
 
 class IncompleteFour(Mem1Game):
@@ -129,8 +130,9 @@ class DistInf(Mem1Game):
         a is the magnitude of preference for each outcome
         both players know p and a
 
-        This game is more complicated, because the payoffs are tied to the prior through the probability p of being in a situation
-        where we're cooperating. So defining two different priors (one for each agent) is hard.
+        Because the payoffs are tied to the prior through the probability p of being in a situation
+        where we're cooperating, defining two different priors (one for each agent) is hard.
+        Not currently implemented.
         """
         bos = [
             [(a,1), (0,0)],
@@ -164,9 +166,7 @@ class DistInf(Mem1Game):
         self.name = "DistInf"
 
 def get_value_incomplete_oneshot(payoffs, p1, p2, dist):
-    # Turn into probabilities
-    p1 = torch.sigmoid(p1)
-    p2 = torch.sigmoid(p2)
+    device = p1.device
 
     # Only the initial state matters
     p1 = p1[:,-1]
@@ -192,15 +192,15 @@ def get_value_incomplete_oneshot(payoffs, p1, p2, dist):
     p_outcomes = (long_p1 * long_p2).reshape((4,4))
     # Probabilities. First dim is types (11, 12, 21, 22) second is outcome (UL, UR, DL, DR)
 
-    r1 = torch.tensor([[p1 for a1 in game for p1, p2 in a1] for t1 in payoffs for game in t1], dtype=torch.float).t()
-    r2 = torch.tensor([[p2 for a1 in game for p1, p2 in a1] for t1 in payoffs for game in t1], dtype=torch.float).t()
+    r1 = torch.tensor([[p1 for a1 in game for p1, p2 in a1] for t1 in payoffs for game in t1], dtype=torch.float, device=device).t()
+    r2 = torch.tensor([[p2 for a1 in game for p1, p2 in a1] for t1 in payoffs for game in t1], dtype=torch.float, device=device).t()
     # Rewards. First dim is outcome, second is types
 
     type_payoffs1 = torch.mm(p_outcomes, r1).diagonal()
     type_payoffs2 = torch.mm(p_outcomes, r2).diagonal()
     # vector of expected payoff for types 11 12 21 22
 
-    dist = torch.tensor(dist).reshape(-1)
+    dist = torch.tensor(dist, device=device).reshape(-1)
     # vector of probabilities of 11 12 21 22
 
     v1 = torch.dot(type_payoffs1, dist)
@@ -212,26 +212,25 @@ def get_value_incomplete_iterated(payoffs, p1, p2, dist, gamma):
     """
     p1[type][state]
     """
+    device = p1.device
+
     vs_per_game_1 = []
     vs_per_game_2 = []
     for t1, t2 in [(0, 0), (0, 1), (1, 0), (1, 1)]:
-        v1, v2 = get_value_iterated(payoffs[t1][t2], p1[t1], p2[t2], None, gamma)
+        v1, v2 = get_value_iterated(payoffs[t1][t2], p1[t1], p2[t2], None, gamma, device)
         vs_per_game_1.append(v1)
         vs_per_game_2.append(v2)
 
     vs_per_game_1 = torch.stack(vs_per_game_1)
     vs_per_game_2 = torch.stack(vs_per_game_2)
-    dist = torch.tensor(dist).reshape(-1)
+    dist = torch.tensor(dist, device=device).reshape(-1)
 
     v1 = torch.dot(vs_per_game_1, dist)
     v2 = torch.dot(vs_per_game_2, dist)
 
     return v1, v2
 
-def get_value_iterated(payoffs, p1, p2, dist, gamma):
-    # Turn into probabilities
-    p1 = torch.sigmoid(p1)
-    p2 = torch.sigmoid(p2)
+def get_value_iterated(payoffs, p1, p2, dist, gamma, device):
     # print("Probabilities are: \np1 {} \np2 {}".format(p1.detach(), p2.detach()))
 
     p1_sX_a1, p1_s0_a1 = p1.split([4, 1])
@@ -254,11 +253,11 @@ def get_value_iterated(payoffs, p1, p2, dist, gamma):
     # size: [4,4] probability of transition - first ind is s', second is s, 
 
     ### Calculate V1 and V2
-    r1s = torch.tensor([r1 for a1 in payoffs for r1, r2 in a1], dtype=torch.float)
-    r2s = torch.tensor([r2 for a1 in payoffs for r1, r2 in a1], dtype=torch.float)
+    r1s = torch.tensor([r1 for a1 in payoffs for r1, r2 in a1], dtype=torch.float, device=device)
+    r2s = torch.tensor([r2 for a1 in payoffs for r1, r2 in a1], dtype=torch.float, device=device)
     # payoffs for CC, CD, DC, DD
 
-    inf_sum = torch.inverse(torch.eye(4) - (gamma * P))
+    inf_sum = torch.inverse(torch.eye(4, device=device) - (gamma * P))
 
     v1 = torch.dot(
         torch.mm(

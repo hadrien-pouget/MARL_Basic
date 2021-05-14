@@ -22,3 +22,8 @@ Can be unique to each env, using jupyter notebooks for now. plot_utils.py has so
 
 # Utils
 A lot of generally useful functions for are put utils.py
+
+# Todo
+Clean up arguments in experiments.py
+add back in original version of distvinf
+finish testing and getting results

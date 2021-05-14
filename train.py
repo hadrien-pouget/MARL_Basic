@@ -1,10 +1,10 @@
 import torch
 
-def train_policies(env, training_rounds, step_func, train_ep, gamma, lr):
+def train_policies(env, training_rounds, step_func, train_ep, gamma, lr, device):
     p1s, p2s = [], []
     for n in range(training_rounds):
         print("Training round:", n, end='\r')
-        p1, p2 = env.gen_rand_policies()
+        p1, p2 = env.gen_rand_policies(device)
         p1, p2 = train(env, p1, p2, step_func, train_ep, gamma, lr)
         p1, p2 = torch.sigmoid(p1), torch.sigmoid(p2)
         p1s.append(p1)  
