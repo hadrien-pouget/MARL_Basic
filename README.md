@@ -20,7 +20,7 @@ Can use different training steps, based on the gradients from calculating the va
 test.py contains code for testing the policies (although some of the testing code is implemented on the game's end.)
 
 # Utils
-A lot of generally useful functions for are put utils.py. Similarly, some functions useful for plotting results 
+A lot of generally useful functions can be found in utils.py. Similarly, some functions useful for plotting results 
 are contained in plot_utils.py.
 
 # Results
