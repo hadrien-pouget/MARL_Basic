@@ -8,14 +8,31 @@ from scipy.spatial import ConvexHull
 
 class IncompleteInfoGame(ABC):
     """
+    Implements a bayesian game for two players, in which the players may have different priors,
+    rather than the usual joint prior. When the game starts, each agents is given a type,
+    and the game is determined by the combination of types. Each player is assumed to have
+    the same number of possible types. This means there are n_types**2 possible games the 
+    players could be playing. Each player is also assumed to have the same number of actions 
+    as the other, and the same number of available actions in each game.
+
     This includes none of the functionality of actually playing the game, which is 
     left abstract. It allows basic 'viewing' functionality for incomplete information
     games, that remains constant across the different types of games. It also sets up 
     some useful parameters.
 
-    Assumes there are only two players.
+    Throughout, p[1,2] represent the player's strategies, prior_[1,2] represent their prior beliefs,
+    and v[1,2] represent their expected payoffs when playing according to p[1,2].
     """ 
     def __init__(self, payoffs, prior_1=None, prior_2=None, prior_1_param=[0], prior_2_param=[0]):
+        """
+        Args:
+            payoffs (nested lists): Indices are, in order; p1 type, p2 type, p1 action, p2 action. 
+                Contains (p1_payoff, p2_payoff) for each pair of types and actions.
+            prior_[1,2] (nested lists): Show the player's prior over the different possible games.
+                Indices are, in order; p1 types, p2 type. Return the probability assigned the corresponding 
+                game. All the probabilities should sum to 1.
+            prior_[1,2]_param (list): If no prior is given, then the code uses this to generate a prior.
+        """
         self.pfs = payoffs
         self.n_types = len(payoffs)
         self.n_games = self.n_types ** 2
@@ -32,7 +49,9 @@ class IncompleteInfoGame(ABC):
 
     @abstractmethod
     def play_game(self, p1, p2):
-        """ play game, return payoffs"""
+        """ 
+        Play game, return payoffs
+        """
         pass
 
     @abstractmethod
@@ -45,8 +64,11 @@ class IncompleteInfoGame(ABC):
     @abstractmethod
     def get_value(self, p1, p2, prior_1=None, prior_2=None, **kwargs):
         """
-        Get v1, v2 if played using p1 and p2, each according to their own prior.
-        Should use self.prior_1 for v1 and self.prior_2 for v2 if None is given.
+        Get v1, v2 if played using p1 and p2, which is the expected payoff
+        with respect to prior_1, prior_2.
+
+        prior_[1,2] should be set to self.prior_[1,2] None is given.
+
         This is used in training to get a gradient, so it should return 
         a pytorch tensor which has been tracking the gradient.
         """
@@ -91,6 +113,9 @@ class IncompleteInfoGame(ABC):
         return self.preset_dists[int(prior_n)]
 
     def sample_types(self, prior=None):
+        """
+        Sample the player's types according to a prior
+        """
         prior = self.prior_1 if prior is None else prior
         tot, t1, r, done = 0, -1, random.random(), False
         while not done:
@@ -106,6 +131,9 @@ class IncompleteInfoGame(ABC):
         return t1, t2
 
     def game_to_string(self, pfs):
+        """
+        Make a string to view a game with payoffs 'pfs' 
+        """
         action_names = ["A", "B"]
         max_name = max([len(n) for n in action_names])
         top = "\n" + " " * max_name + "|"
@@ -148,11 +176,18 @@ class IncompleteInfoGame(ABC):
         print("\n".join(map(str, self.normal_form(prior=prior))))
     
     def get_pure_outcomes_as_points(self, prior=None):
+        """
+        Turn each of the possible outcomes of the games into coordinate points, 
+        where the coordinates are the payoffs for each player
+        """
         nform = self.normal_form(prior=prior)
         points = [rs for strat1 in nform for rs in strat1]
         return points
 
     def outcomes_polygon(self, prior=None):
+        """
+        Draw a convex shape containing all of the points returned by the above function
+        """
         try:
             points = self.get_pure_outcomes_as_points(prior=prior)
             hull = ConvexHull(points)

@@ -1,6 +1,9 @@
 import torch
 
 def train_policies(env, training_rounds, step_func, train_ep, gamma, lr, device):
+    """
+    Jointly train policies, starting from random, according the supplied hyperparameters.
+    """
     p1s, p2s = [], []
     for n in range(training_rounds):
         print("Training round:", n, end='\r')
