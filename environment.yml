@@ -1,0 +1,21 @@
+name: marl
+channels:
+  - defaults
+dependencies:
+  - cudatoolkit=10.2
+  - pytorch
+  - pylint
+  - imageio
+  - tqdm
+  - opencv
+  - scikit-learn
+  - scikit-image
+  - ipython
+  - torchvision
+  - configargparse
+  - boto3
+  - h5py
+  - seaborn
+  - scipy
+  - ipykernel
+  - ipywidgets
